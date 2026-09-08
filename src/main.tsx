@@ -1,3 +1,4 @@
+import { Archive } from './pages/Archive';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate, useRouteError } from 'react-router-dom';
@@ -12,6 +13,6 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/manrope';
 import './styles.css';
 function ErrorPage() { useRouteError(); return <main className="fatal-error"><h1>Не удалось открыть страницу</h1><p>Сохранённые демоданные остаются в браузере.</p><a className="button primary" href="/commissions">Вернуться к комиссиям</a></main>; }
-const router = createBrowserRouter([{ path: '/login', element: <Login/>, errorElement: <ErrorPage/> }, { path: '/', element: <Layout/>, errorElement: <ErrorPage/>, children: [{ index: true, element: <Home/> }, { path: 'commissions', element: <Commissions/> }, { path: 'commissions/new', element: <NewCommission/> }, { path: 'commissions/:id', element: <CommissionDetail/> }, { path: 'people', element: <Navigate to="/data/people" replace/> }, { path: 'gek', element: <GekHub/> }, { path: 'gek/documents', element: <GekDocuments/> }, { path: 'data', element: <DataHub/> }, { path: 'data/people', element: <PeopleHub/> }, { path: 'data/people/:category', element: <PeopleTable/> }, { path: ':module', element: <Unavailable/> }, { path: 'logout', element: <Logout/> }, { path: '*', element: <Home/> }] }]);
+const router = createBrowserRouter([{ path: '/login', element: <Login/>, errorElement: <ErrorPage/> }, { path: '/', element: <Layout/>, errorElement: <ErrorPage/>, children: [{ index: true, element: <Home/> }, { path: 'commissions', element: <Commissions/> }, { path: 'commissions/new', element: <NewCommission/> }, { path: 'commissions/:id', element: <CommissionDetail/> }, { path: 'people', element: <Navigate to="/data/people" replace/> }, { path: 'gek', element: <GekHub/> }, { path: 'gek/documents', element: <GekDocuments/> }, { path: 'data', element: <DataHub/> }, { path: 'data/people', element: <PeopleHub/> }, { path: 'data/people/:category', element: <PeopleTable/> }, { path: 'archive', element: <Archive/> }, { path: ':module', element: <Unavailable/> }, { path: 'logout', element: <Logout/> }, { path: '*', element: <Home/> }] }]);
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><StoreProvider><RouterProvider router={router}/></StoreProvider></React.StrictMode>);
 
