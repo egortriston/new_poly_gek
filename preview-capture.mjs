@@ -1,0 +1,12 @@
+import {chromium} from '@playwright/test';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+await page.goto('http://127.0.0.1:5174/login');
+await page.getByRole('button',{name:'Заполнить данные для входа'}).click();
+await page.getByRole('button',{name:'Войти в рабочее пространство'}).click();
+await page.getByRole('heading',{name:'С чего начнём?'}).waitFor();
+await page.screenshot({path:'artifacts/home.png',fullPage:true});
+await page.goto('http://127.0.0.1:5174/data/people');
+await page.getByRole('heading',{name:'Люди',exact:true}).waitFor();
+await page.screenshot({path:'artifacts/people.png',fullPage:true});
+await browser.close();

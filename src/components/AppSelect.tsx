@@ -1,0 +1,13 @@
+import { Children, isValidElement, useState, useCallback, type SelectHTMLAttributes, type ReactElement, type ChangeEvent } from 'react';
+import * as Select from '@radix-ui/react-select';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+type OptionProps = { value?: string; children?: string; disabled?: boolean };
+const EMPTY = '__empty_selection__';
+export function AppSelect({children,value,onChange,required,disabled,name,id,className,'aria-label':label,...rest}:SelectHTMLAttributes<HTMLSelectElement>) {
+ const [container,setContainer]=useState<HTMLElement|null>(null);
+ const options=Children.toArray(children).filter(isValidElement).map(child=>{const p=(child as ReactElement<OptionProps>).props;return {value:String(p.value??p.children??''),label:String(p.children??''),disabled:p.disabled};});
+ const triggerRef=useCallback((node:HTMLButtonElement|null)=>{setContainer(node?.closest('dialog')??null);},[]);
+ const selected=String(value??''); const empty=options.find(o=>o.value==='');
+ return <Select.Root value={selected|| (required?'':EMPTY)} required={required} disabled={disabled} name={name} onValueChange={v=>{const next=v===EMPTY?'':v;onChange?.({target:{value:next},currentTarget:{value:next}} as ChangeEvent<HTMLSelectElement>);}}><Select.Trigger ref={triggerRef} id={id} aria-label={label} aria-describedby={rest['aria-describedby']} className={`app-select ${className??''}`}><Select.Value placeholder={empty?.label??'Выберите значение'}/><Select.Icon className="app-select-arrow"><ChevronDown size={15}/></Select.Icon></Select.Trigger><Select.Portal container={container??undefined}><Select.Content className="app-select-menu" position="popper" sideOffset={6} collisionPadding={12}><Select.ScrollUpButton className="app-select-scroll"><ChevronUp size={14}/></Select.ScrollUpButton><Select.Viewport className="app-select-viewport">{options.map(o=><Select.Item key={o.value} value={o.value||EMPTY} disabled={o.disabled||(required&&!o.value)} className="app-select-option"><Select.ItemText>{o.label}</Select.ItemText><Select.ItemIndicator className="app-select-check"><Check size={15}/></Select.ItemIndicator></Select.Item>)}</Select.Viewport><Select.ScrollDownButton className="app-select-scroll"><ChevronDown size={14}/></Select.ScrollDownButton></Select.Content></Select.Portal></Select.Root>;
+}
+

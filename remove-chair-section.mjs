@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+const p='src/pages/CommissionDetail.tsx';let s=fs.readFileSync(p,'utf8');
+s=s.replace("['members', 'chairman', 'programs', 'documents']","['members', 'programs', 'documents']");
+s=s.replace("['chairman', 'Председатель', UserRound, null], ",'');
+const start=s.indexOf("{tab === 'chairman' &&");const end=s.indexOf("{tab === 'programs' &&",start);if(start<0||end<0)throw Error('Section not found');s=s.slice(0,start)+s.slice(end);
+s=s.replace(" onCard={chair ? () => setTab('chairman') : undefined}",'');
+s=s.replace('onSelect, onCard }:','onSelect }:').replace(' onCard?: () => void;','').replace('; onCard?: () => void','');
+s=s.replace('{onCard && <button className="text-button" onClick={onCard}>Карточка <ArrowUpRight size={14}/></button>}','');
+s=s.replace('const checks = completeness(draft);','const checks = completeness(draft).filter(check => check.key !== \'chairman\');');
+fs.writeFileSync(p,s);
