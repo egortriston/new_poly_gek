@@ -1,0 +1,17 @@
+import {chromium,expect} from '@playwright/test';
+const b=await chromium.launch({channel:'msedge',headless:true});
+try {const p=await b.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});p.setDefaultTimeout(8000);const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:5174/login');await p.getByRole('button',{name:'Заполнить данные для входа'}).click();await p.getByRole('button',{name:'Войти в систему',exact:true}).click();
+await p.goto('http://127.0.0.1:5174/commissions');const headings=await p.locator('thead th').allTextContents();
+for(const kind of ['spo','ac','ppa']) {
+ await p.goto('http://127.0.0.1:5174/attestation/'+kind+'/commissions');
+ if(JSON.stringify(await p.locator('thead th').allTextContents())!==JSON.stringify(headings))throw Error('Columns mismatch '+kind);
+ await expect(p.locator('.list-panel .table-toolbar').getByPlaceholder('Номер, программа или председатель')).toBeVisible();
+ await p.getByRole('button',{name:'Создать комиссию',exact:true}).click();await expect(p.getByRole('dialog')).toBeVisible();await p.getByRole('dialog').getByRole('combobox',{name:'Высшая школа',exact:true}).click();await p.getByRole('option',{name:'Высшая школа производственного менеджмента',exact:true}).click();await p.getByRole('textbox',{name:'Номер комиссии',exact:true}).fill('098');await p.getByRole('dialog').getByRole('button',{name:'Создать комиссию',exact:true}).click();await expect(p.locator('.detail-page')).toBeVisible();await expect(p.locator('.breadcrumb svg')).toHaveCount(0);await p.getByRole('button',{name:'Список комиссий',exact:true}).click();await p.reload();await expect(p.locator('tbody')).toContainText('098');
+ await p.getByRole('tab',{name:/Заполнены/}).click();await expect(p.locator('tbody tr')).toHaveCount(0);await p.getByRole('tab',{name:/Все комиссии/}).click();
+ await p.getByRole('checkbox',{name:/Выбрать все комиссии/}).check();await p.getByRole('button',{name:/Таблица ·/}).click();await expect(p.locator('.att-letter')).toHaveCount(0);await expect(p.getByRole('dialog').locator('table')).toBeVisible();await p.getByRole('button',{name:'Закрыть окно'}).click();
+ const toggle=p.getByRole('button',{name:'Подразделы: '+(kind==='spo'?'Комиссии СПО':kind==='ac'?'Аттестационные комиссии':'Комиссии ППА'),exact:true});await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','false');await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','true');
+}
+await p.goto('http://127.0.0.1:5174/attestation/ppa/documents');await expect(p.locator('main').getByRole('combobox')).toHaveCount(0);await expect(p.locator('.att-document')).toHaveCount(2);await expect(p.locator('.att-document button')).toHaveCount(4);await p.locator('.att-document').last().getByRole('button',{name:/^Печать/}).click();await expect(p.locator('.att-letter-title')).toHaveText('РАСПОРЯЖЕНИЕ');await p.getByRole('button',{name:'Закрыть окно'}).click();
+await p.goto('http://127.0.0.1:5174/attestation/spo/commissions');await p.screenshot({path:'artifacts/attestation-list-unified.png',fullPage:true});await p.setViewportSize({width:390,height:844});await expect(p.locator('.commission-mobile-list').getByRole('button',{name:/Открыть/}).first()).toBeVisible();
+if(errors.length)throw Error(errors.join(';'));console.log('PASS: columns match GEK; filters inside; creation school modal and persistence x3; status; selection/preview; breadcrumbs; collapsible menu; PPA four actions no school; mobile');
+}finally{await b.close();}
