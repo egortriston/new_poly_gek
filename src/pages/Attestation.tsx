@@ -2,7 +2,7 @@ import { PageTitle } from '../components/PageTitle';
 import { AttestationList } from '../components/AttestationList';
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, Layers3, Plus, Pencil, Trash2, Search, LockKeyhole, Printer } from 'lucide-react';
+import { ArrowUpRight, Layers3, Plus, Pencil, Trash2, Search, LockKeyhole, Printer, GraduationCap, ClipboardCheck, ClipboardClock } from 'lucide-react';
 import { AppSelect } from '../components/AppSelect';
 import { Avatar, Badge, Confirm, Empty, Field, Modal } from '../components/ui';
 import { AttestationEditor } from '../components/AttestationEditor';
@@ -12,7 +12,7 @@ import { isAttestationFilled, attestationTypes, readAttestations, saveAttestatio
 import { useStore } from '../store';
 
 export function AttestationHub() {
-  return <div className="page-enter hub-page"><div className="hub-welcome"><PageTitle>Формирование аттестационных комиссий</PageTitle><p>Выберите тип комиссии для заполнения состава и подготовки документов.</p></div><div className="people-hub-grid">{Object.entries(attestationTypes).map(([kind, info]) => <Link key={kind} to={`/attestation/${kind}`} className="module-card available"><span className="module-icon"><Layers3 size={25} /></span><h2>{info.title}</h2><p>{info.description}</p><footer>Открыть раздел <ArrowUpRight size={17} /></footer></Link>)}</div><Link to="/data" className="hub-related">Исходные данные · преподаватели, школы, направления и программы <ArrowUpRight size={16} /></Link></div>;
+  return <div className="page-enter hub-page"><div className="hub-welcome"><PageTitle>Формирование аттестационных комиссий</PageTitle><p>Выберите тип комиссии для заполнения состава и подготовки документов.</p></div><div className="people-hub-grid">{Object.entries(attestationTypes).map(([kind, info]) => <Link key={kind} to={`/attestation/${kind}`} className="module-card available"><span className="module-icon">{kind==='spo'?<GraduationCap size={25}/>:kind==='ac'?<ClipboardCheck size={25}/>:<ClipboardClock size={25}/>}</span><h2>{info.title}</h2><p>{info.description}</p><footer>Открыть раздел <ArrowUpRight size={17} /></footer></Link>)}</div><Link to="/data" className="hub-related">Исходные данные · преподаватели, школы, направления и программы <ArrowUpRight size={16} /></Link></div>;
 }
 export function AttestationPage() {
   const { kind, view } = useParams();

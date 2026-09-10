@@ -90,7 +90,7 @@ export function OopStatus() {
         {programs.length ? <><p>Измените запрос или сбросьте фильтры.</p><button className="button secondary" onClick={reset}>Сбросить фильтры</button></> : <Link className="text-button" to="/data/catalog/programs">Открыть образовательные программы</Link>}
       </Empty>}
     </div>
-    <p className="hub-footnote">Статус отражает утверждение ООП, а не полноту заполнения. В демоверсии используются сведения, сохранённые в этом браузере; новая программа имеет статус «Черновик».</p>
+    <p className="hub-footnote">Статус отражает утверждение ООП, а не полноту заполнения. Новая программа имеет статус «Черновик».</p>
   </div>;
 }
 

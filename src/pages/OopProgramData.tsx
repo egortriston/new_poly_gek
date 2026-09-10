@@ -104,7 +104,7 @@ function ProgramTable({ kind }: { kind: string }) {
       </table></div>
       {!rows.length && <Empty title="Записи не найдены">{filter || query ? <><p>Измените условия поиска или добавьте запись.</p><button className="button secondary" onClick={() => setParams({})}>Сбросить фильтры</button></> : 'Нажмите «Добавить», чтобы внести сведения по образовательной программе.'}</Empty>}
     </div>
-    <p className="hub-footnote">Изменения сохраняются в демоверсии и используются в формировании и печати ООП. {matrix ? 'Отображение матрицы в печатной форме настраивается в разделе 8.4 формы ООП.' : 'Удаление связи с формой обучения сохраняет ранее введённые сроки и ссылки в карточке ООП.'}</p>
+    <p className="hub-footnote">Изменения используются в формировании и печати ООП. {matrix ? 'Отображение матрицы в печатной форме настраивается в разделе 8.4 формы ООП.' : 'Удаление связи с формой обучения сохраняет ранее введённые сроки и ссылки в карточке ООП.'}</p>
     {edit && <Modal wide title={original ? 'Редактирование записи' : 'Новая запись'} onClose={() => setEdit(null)} footer={<><button className="button secondary" onClick={() => setEdit(null)}>Отмена</button><button type="submit" form="oop-data-edit" className="button primary">Сохранить</button></>}>
       <form id="oop-data-edit" onSubmit={e => { e.preventDefault(); save(); }}>
         <Field label="Образовательная программа" required><AppSelect aria-label="Образовательная программа" value={edit.programId} disabled={!!original} onChange={e => { setEdit({ ...edit, programId: e.target.value }); setError(''); }}><option value="">Выберите программу</option>{programs.map(program => <option key={program.id_mep} value={program.id_mep}>{name(program.id_mep)}</option>)}</AppSelect></Field>
@@ -115,5 +115,12 @@ function ProgramTable({ kind }: { kind: string }) {
     {remove && <Confirm title="Удалить запись?" confirmLabel="Удалить" danger onClose={() => setRemove(null)} onConfirm={() => { if (persist(remove, true)) setRemove(null); }}>
       <p>{name(remove.programId)}</p><p>{matrix ? 'Запись будет удалена из матрицы ПК ООП и больше не попадёт в печать.' : `Форма обучения «${remove.values[0]}» будет исключена из программы.`}</p>{error && <p role="alert">{error}</p>}
     </Confirm>}
+  </div>;
+}
+export function OopDataGroup({ kind }: { kind: 'directions' | 'general' }) {
+  return <div className="page-enter hub-page">
+    <Link className="text-button" to="/oop/data">Ввод исходных данных /</Link>
+    <div className="hub-welcome"><PageTitle>{kind === 'directions' ? 'Исходные данные для направлений подготовки' : 'Общие исходные данные'}</PageTitle></div>
+    <section className="scope-note"><h2>Раздел в подготовке</h2><p>Таблицы этого блока ещё не перенесены из предыдущей системы.</p></section>
   </div>;
 }

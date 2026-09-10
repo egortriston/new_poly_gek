@@ -2,6 +2,17 @@ export type SectionDestination = { title: string; path: string; group: string; k
 
 // Add each new page here together with words that users might use to find it.
 export const sectionDestinations: SectionDestination[] = [
+ {title:'Общие исходные данные ООП',path:'/oop/data/general',group:'Исходные данные ООП',keywords:'общие справочники образовательных программ'},
+ {title:'Наименования областей ПД',path:'/oop/data/general/areas',group:'Общие исходные данные',keywords:'код область профессиональная деятельность'},
+ {title:'Типы задач ПД',path:'/oop/data/general/types',group:'Общие исходные данные',keywords:'тип задачи профессиональная деятельность'},
+ {title:'Профессиональные стандарты',path:'/oop/data/general/standards',group:'Общие исходные данные',keywords:'профстандарт код утверждение'},
+ {title:'Матрица УК',path:'/oop/data/general/uk',group:'Общие исходные данные',keywords:'универсальные компетенции индикаторы уровень обучения'},
+{"title":"Сферы в областях ПД","path":"/oop/data/directions/areas","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
+{"title":"Задачи ПД","path":"/oop/data/directions/tasks","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
+{"title":"Объекты ПД","path":"/oop/data/directions/objects","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
+{"title":"Связь проф. стандартов и НП","path":"/oop/data/directions/standards","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
+{"title":"Матрица ПК СУОС","path":"/oop/data/directions/pk","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
+{"title":"Матрица ОПК","path":"/oop/data/directions/opk","group":"Исходные для направлений","keywords":"направление подготовки профессиональная деятельность компетенции"},
  {title:'Матрица ПК ООП',path:'/oop/data/programs/matrix',group:'Исходные данные ООП',keywords:'профессиональные компетенции индикаторы задачи основания'},
  {title:'Формы обучения образовательных программ',path:'/oop/data/programs/forms',group:'Исходные данные ООП',keywords:'очная заочная очно-заочная связь программа форма'},
  {title:'Формирование ООП',path:'/oop/formation',group:'Разработка и корректировка ООП',keywords:'создание разработка образовательной программы'},

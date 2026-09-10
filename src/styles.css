@@ -277,3 +277,16 @@
  .oop-data-actions { align-items: flex-start; }
  .oop-data-actions .button { flex-shrink: 0; }
 }
+
+.oop-status-tabs { overflow-y: hidden; scrollbar-width: none; }
+.oop-status-tabs::-webkit-scrollbar { display: none; }
+.oop-status-tabs > button.active::after { bottom: 0; }
+.app-select-search { padding: 8px; border-bottom: 1px solid #e5eadd; }
+.app-select-search input { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 1px solid #dce4d6; border-radius: 6px; font: inherit; font-size: 13px; color: #354f37; background: #fafcf8; outline: none; }
+.app-select-search input:focus { border-color: #729368; box-shadow: 0 0 0 2px #eaf1e4; }
+.app-select-empty { padding: 16px; color: #7a8772; font-size: 12px; }
+.app-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oop-general-table { min-width: 650px; }
+.oop-general-table td { white-space: pre-line; overflow-wrap: anywhere; }
+.oop-general-table th:last-child { width: 110px; }
+.oop-general-table .button-row { flex-wrap: nowrap; }
