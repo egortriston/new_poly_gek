@@ -47,8 +47,19 @@ function database(): PgSql\Connection
 
 function query(string $sql, array $params = []): PgSql\Result
 {
-    $result = @pg_query_params(database(), $sql, $params);
-    if (!$result) throw new RuntimeException('Database query failed');
+    $connection=database();
+    if(!@pg_send_query_params($connection,$sql,$params))throw new RuntimeException('Database query failed');
+    $result=pg_get_result($connection);
+    while (pg_get_result($connection) !== false) { /* Drain the single-statement result stream. */ }
+    $status=pg_result_status($result);
+    if(!in_array($status,[PGSQL_COMMAND_OK,PGSQL_TUPLES_OK],true)){
+        $code=pg_result_error_field($result,PGSQL_DIAG_SQLSTATE);
+        if($code==='23505')throw new ApiError(409,'DUPLICATE','Запись с таким идентификатором или кодом уже существует.');
+        if($code==='23503')throw new ApiError(409,'IN_USE','Запись связана с другими данными или связанная запись больше не существует.');
+        if(in_array($code,['22001','22P02','23502','23514'],true))throw new ApiError(422,'VALIDATION','Проверьте значения и длину заполненных полей.');
+        if(in_array($code,['40P01','40001','55P03'],true))throw new ApiError(409,'CONCURRENT_CHANGE','Данные изменяются другим пользователем. Повторите действие.');
+        throw new RuntimeException('Database query failed');
+    }
     return $result;
 }
 
@@ -102,8 +113,8 @@ function requireAdmin(array $user): void
 function readJson(): array
 {
     if (!str_starts_with(strtolower($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json')) throw new ApiError(415, 'JSON_REQUIRED', 'Ожидается запрос JSON.');
-    $raw = file_get_contents('php://input', false, null, 0, 16385);
-    if (strlen($raw) > 16384) throw new ApiError(413, 'REQUEST_TOO_LARGE', 'Слишком большой запрос.');
+    $raw = file_get_contents('php://input', false, null, 0, 1048577);
+    if (strlen($raw) > 1048576) throw new ApiError(413, 'REQUEST_TOO_LARGE', 'Слишком большой запрос.');
     try { $body = json_decode($raw, true, 32, JSON_THROW_ON_ERROR); }
     catch (JsonException) { throw new ApiError(400, 'INVALID_JSON', 'Неверный формат запроса.'); }
     if (!is_array($body)) throw new ApiError(400, 'INVALID_JSON', 'Неверный формат запроса.');

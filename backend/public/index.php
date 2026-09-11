@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/src/bootstrap.php';
+require dirname(__DIR__) . '/src/catalog.php';
+require dirname(__DIR__) . '/src/people.php';
 ini_set('display_errors', '0');
 $requestId = bin2hex(random_bytes(8));
 header('X-Request-ID: ' . $requestId);
@@ -35,6 +37,13 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
+    if($path==='/api/v1/catalog'&&$method==='GET')respond(['data'=>transaction(fn()=>catalogSnapshot())]);
+    if($path==='/api/v1/people'&&$method==='GET')respond(['data'=>transaction(fn()=>peopleSnapshot())]);
+    if(preg_match('#^/api/v1/(catalog|people)/([a-z]+)/(save|delete)$#',$path,$matches)&&$method==='POST'){
+        requireCsrf();$body=readJson();
+        $handler=$matches[1]==='catalog'?($matches[3]==='save'?'saveCatalog':'deleteCatalog'):($matches[3]==='save'?'savePeople':'deletePeople');
+        respond(['data'=>$handler($matches[2],$body)]);
+    }
     if ($path === '/api/v1/health/database' && $method === 'GET') {
         requireAdmin($user); query('SELECT 1'); respond(['data' => ['status' => 'ok']]);
     }
