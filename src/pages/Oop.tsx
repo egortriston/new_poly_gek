@@ -1,3 +1,4 @@
+import { useStore } from '../store';
 import { PageTitle } from '../components/PageTitle';
 import { OopStatus } from '../components/OopStatus';
 import { OopPrint } from '../components/OopPrint';
@@ -15,6 +16,7 @@ export const oopSections = [
   { id: 'status', title: 'Проверка статуса ООП', heading: 'Проверка статуса ООП', description: 'Таблица состояния образовательных программ.', icon: ClipboardCheck, program: false },
 ];
 export function Oop() {
+  const { user } = useStore();
   const { section } = useParams();
   const [params, setParams] = useSearchParams();
   const [selected, setSelected] = useState(params.get('program') ?? '');
@@ -31,7 +33,7 @@ export function Oop() {
       const contents = <><span className="module-icon"><s.icon size={25}/></span><h2>{s.title}</h2><p>{s.description}</p><footer>Открыть раздел<ArrowUpRight size={17}/></footer></>;
       return <Link key={s.id} className="module-card available" to={'/oop/' + s.id + (s.program && program ? '?program=' + encodeURIComponent(selected) : '')}>{contents}</Link>;
     })}</div> : <>
-      {current.id === 'formation' && program ? <OopFormation key={program.id_mep} programId={program.id_mep}/> : current.id === 'print' && program ? <OopPrint key={program.id_mep} programId={program.id_mep}/> : current.id === 'status' ? <OopStatus/> : current.id === 'data' ? <div className="people-hub-grid">{['Исходные данные для формирования сведений по направлениям подготовки', 'Общие исходные данные всех образовательных программ', 'Исходные данные для формирования сведений по образовательным программам'].map((title, index) => <Link className="module-card available" key={title} to={["/oop/data/directions", "/oop/data/general", "/oop/data/programs"][index]}><span className="module-icon"><Database size={24}/></span><h2>{title}</h2><p>{index === 0 ? "Профессиональная деятельность, стандарты и матрицы компетенций." : index === 1 ? "Общие справочники и матрица универсальных компетенций." : "Матрица ПК ООП и формы обучения образовательных программ."}</p><footer>Открыть раздел<ArrowUpRight size={17}/></footer></Link>)}</div> : <section className="scope-note"><current.icon size={28}/><h2>{current.program ? program ? program.id_program + ' · ' + program.name_program : 'Выберите образовательную программу' : 'Таблица статусов ООП'}</h2><p>Структура раздела перенесена. {current.id === 'print' ? 'Подключение существующей печатной формы — следующий этап.' : current.id === 'formation' ? 'Перенос формы заполнения — следующий этап.' : 'Перенос таблицы статусов — следующий этап.'}</p></section>}
+      {current.id === 'formation' && program ? <OopFormation key={program.id_mep} programId={program.id_mep}/> : current.id === 'print' && program ? <OopPrint key={program.id_mep} programId={program.id_mep}/> : current.id === 'status' ? <OopStatus/> : current.id === 'data' ? <div className="people-hub-grid">{['Исходные данные для формирования сведений по направлениям подготовки', 'Общие исходные данные всех образовательных программ', 'Исходные данные для формирования сведений по образовательным программам'].map((title, index) => user?.role !== 'admin' && index !== 2 ? null : <Link className="module-card available" key={title} to={["/oop/data/directions", "/oop/data/general", "/oop/data/programs"][index]}><span className="module-icon"><Database size={24}/></span><h2>{title}</h2><p>{index === 0 ? "Профессиональная деятельность, стандарты и матрицы компетенций." : index === 1 ? "Общие справочники и матрица универсальных компетенций." : "Матрица ПК ООП и формы обучения образовательных программ."}</p><footer>Открыть раздел<ArrowUpRight size={17}/></footer></Link>)}</div> : <section className="scope-note"><current.icon size={28}/><h2>{current.program ? program ? program.id_program + ' · ' + program.name_program : 'Выберите образовательную программу' : 'Таблица статусов ООП'}</h2><p>Структура раздела перенесена. {current.id === 'print' ? 'Подключение существующей печатной формы — следующий этап.' : current.id === 'formation' ? 'Перенос формы заполнения — следующий этап.' : 'Перенос таблицы статусов — следующий этап.'}</p></section>}
     </>}
   </div>;
 }

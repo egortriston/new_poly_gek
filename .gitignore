@@ -3,3 +3,5 @@ dist/
 *.tsbuildinfo
 *.log
 artifacts/
+backend/config.local.php
+backend/var/

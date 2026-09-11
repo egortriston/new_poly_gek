@@ -1,3 +1,5 @@
+import { canAccessPath } from '../api';
+import { useStore } from '../store';
 import { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Search, X } from 'lucide-react';
@@ -9,7 +11,8 @@ export function SectionSearch({ onNavigate }: { onNavigate: () => void }) {
   const [active, setActive] = useState(0);
   const id = useId();
   const navigate = useNavigate();
-  const results = findSections(query);
+  const { user } = useStore();
+  const results = findSections(query).filter(item => canAccessPath(user, item.path));
 
   function choose(item: SectionDestination) {
     setOpen(false);
