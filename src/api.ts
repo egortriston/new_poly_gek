@@ -4,14 +4,15 @@ let csrfToken = '';
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
 }
-export async function api<T>(path: string, body?: unknown): Promise<T> {
+export async function api<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const multipart = body instanceof FormData;
+  const timer = setTimeout(() => controller.abort(), multipart ? 300000 : 15000);
   try {
     const response = await fetch('/api/v1' + path, {
-      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', signal: controller.signal,
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+      headers: body === undefined ? {} : multipart ? {'X-CSRF-Token':csrfToken} : { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
     });
     const result = await response.json().catch(() => null);
     if (!response.ok) {
@@ -34,5 +35,5 @@ export async function signIn(username: string, password: string): Promise<Sessio
 }
 export async function signOut(): Promise<void> { await api('/auth/logout', {}); csrfToken = ''; }
 export function canAccessPath(user: SessionUser | null, path: string): boolean {
-  return user?.role === 'admin' || !/^\/oop\/data\/(directions|general)(\/|$)/.test(path);
+  return user?.role === 'admin' || !/^\/oop\/(status|data\/(directions|general))(\/|$)/.test(path);
 }

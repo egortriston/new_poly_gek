@@ -1,0 +1,93 @@
+.page-break {
+    page-break-after: always;
+    }
+  p {
+    text-indent: 40px;
+    margin: 0;
+    text-align: justify;
+    }
+
+  .com_break{
+    margin: 10px;
+    font-size: 20px;
+    text-align: justify;
+  }
+.com{
+    /*text-indent: 80px;*/
+    text-align: justify;
+    font-size: 15px;
+  }
+.school {
+  text-align: center; 
+  margin: 20px;
+}
+br {
+    text-indent: 40px;
+    text-align: justify;
+    }
+
+.form-group, .btn-text, legend {
+    font-size: 22px;
+}
+
+
+.noindent {
+    text-indent: 0px;
+}
+
+.indent {
+    text-indent: 50px;
+
+}
+
+.indent-more {
+    text-indent: 125px;
+}
+
+.leftstr, .rightstr {
+    float: left; 
+    width: 50%; 
+    margin-top: 0;
+}
+.rightstr {
+    text-align: right; 
+   }
+ input, button, a{
+    font-size: 14;
+  }
+.school_1, .school_2, .school_3, .school_4, .school_5, .school_6 {
+    text-align: center;
+    margin: 0;
+  }
+
+.school_1 {
+    margin-right: 250px;
+}
+
+.rspr {
+    margin-right: 270px;
+    text-align: center;
+    font-size: 26px;
+}
+
+table {
+    font-size: 13pt;
+    border-collapse: collapse; 
+         
+}
+
+
+th{
+    text-align: center;
+    /*border: 1px solid black;*/
+    font-weight: normal;
+
+}
+
+td{
+    vertical-align: top;
+    padding-left: 5px;
+    padding-right: 2px;
+   /*border: 1px solid black;*/
+
+}

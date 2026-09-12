@@ -1,0 +1,62 @@
+.page-break {
+    page-break-after: always;
+    }
+
+header {
+    text-align: right;
+}
+
+
+table {
+    font-size: 13pt;
+    border-collapse: collapse; 
+         
+}
+
+
+th{
+    text-align: center;
+    /*border: 1px solid black;*/
+
+
+}
+
+td{
+    vertical-align: top;
+    padding-left: 5px;
+    padding-right: 2px;
+   /*border: 1px solid black;*/
+
+}
+
+
+.employee_number{
+    font-size: 11pt;
+}
+
+.center{
+    text-align: center;
+}
+
+.zero {
+    margin: 0;
+}
+
+.indent {
+    text-indent: 50px;
+
+}
+
+.indent-more {
+    text-indent: 125px;
+}
+
+.leftstr, .rightstr {
+    float: left; 
+    width: 50%; 
+    margin-top: 0;
+}
+.rightstr {
+    text-align: right; 
+   }
+

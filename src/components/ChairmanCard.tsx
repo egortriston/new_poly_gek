@@ -4,11 +4,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useBlocker } from "react-router-dom";
 import {
   ArrowLeft,
+  Archive,
   BookOpen,
   Building2,
   Check,
   FileText,
   GraduationCap,
+  Printer,
   Save,
   UserRound,
 } from "lucide-react";
@@ -21,6 +23,8 @@ export function ChairmanCard({
   complex,
   schools,
   onChange,
+  onArchive,
+  onPrint,
   onSave,
   onBack,
 }: {
@@ -29,6 +33,8 @@ export function ChairmanCard({
   complex: boolean;
   schools: { id: string; name: string }[];
   onChange: (entry: Entry) => void;
+  onArchive: () => Promise<void>;
+  onPrint: () => void;
   onSave: () => Promise<Entry>;
   onBack: () => void;
 }) {
@@ -51,6 +57,7 @@ export function ChairmanCard({
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
   const [busy, setBusy] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState("");
   const save = async () => {
     if (busy) return;
@@ -63,6 +70,18 @@ export function ChairmanCard({
       setError((error as Error).message);
     } finally {
       setBusy(false);
+    }
+  };
+  const archive = async () => {
+    if (busy || archiving) return;
+    setArchiving(true);
+    setError("");
+    try {
+      await onArchive();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setArchiving(false);
     }
   };
   const input = (key: string, label: string, placeholder = "") => (
@@ -302,6 +321,22 @@ export function ChairmanCard({
                 <dd>{person.organization}</dd>
               </div>
             </dl>
+          </div>
+          <div className="detail-summary chairman-actions">
+            <h3>Действия</h3>
+            <div className="button-column">
+              <button className="button secondary" onClick={onPrint}>
+                <Printer size={15} /> Перейти к печати
+              </button>
+              <button
+                className="button primary"
+                disabled={busy || archiving || person.missing}
+                onClick={archive}
+              >
+                <Archive size={15} />
+                {archiving ? "Открытие папки…" : "Папка архива"}
+              </button>
+            </div>
           </div>
         </aside>
       </div>

@@ -1,0 +1,30 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({headless:true,channel:'msedge'});
+try {
+ const c=await browser.newContext({baseURL:'http://127.0.0.1:5174',viewport:{width:1440,height:1000}});
+ const session=(await (await c.request.get('/api/v1/auth/session')).json()).data;
+ assert.equal((await c.request.post('/api/v1/auth/login',{headers:{'X-CSRF-Token':session.csrfToken},data:{username:'admin',password:process.env.TEST_ADMIN_PASSWORD}})).status(),200);
+ const data=(await (await c.request.get('/api/v1/ppa/context')).json()).data;
+ assert.ok(data.records.some(r=>r.amendment)&&data.records.some(r=>!r.amendment));
+ const page=await c.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/attestation/ppa/commissions');
+ await page.locator('tbody tr.attestation-clickable-row').first().waitFor();
+ assert.equal(await page.locator('tbody tr.attestation-clickable-row').count(),50);
+ await page.locator('tbody tr.attestation-clickable-row').first().locator('td').nth(2).click();
+ await page.getByRole('tab',{name:'Дисциплины',exact:true}).click();
+ await page.getByRole('heading',{name:/Дисциплины/}).waitFor();
+ await page.goto('/attestation/ppa/commissions?tab=amendments');
+ await page.locator('tbody tr.attestation-clickable-row').first().waitFor();
+ assert.equal(await page.locator('tbody tr.attestation-clickable-row').count(),data.records.filter(r=>r.amendment).length);
+ await page.goto('/attestation/ppa/documents');
+ await page.locator('.document-school').waitFor();
+ assert.equal(await page.locator('.document-school').count(),1);
+ await page.locator('.att-document').nth(1).getByRole('button',{name:'Заполнить титульный лист',exact:true}).click();
+ await page.getByRole('textbox',{name:'Основание',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Отмена',exact:true}).click();
+ await page.locator('.att-document').nth(1).getByRole('button',{name:'Печать',exact:true}).click();
+ await page.getByRole('link',{name:'Скачать PDF'}).waitFor({timeout:30000});
+ assert.deepEqual(errors,[]);
+ console.log('PASS PPA: real data, progressive rows, disciplines, amendments, cover form and mPDF preview. No business writes.');
+}catch(e){console.error(e.message.split('\n')[0]);process.exitCode=1;}finally{await browser.close();}

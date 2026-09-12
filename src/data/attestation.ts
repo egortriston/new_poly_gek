@@ -7,7 +7,7 @@ export const attestationTypes = {
 };
 export type AttestationKind = keyof typeof attestationTypes;
 export type AttestationRecord = {
-  id: string; kind: AttestationKind; number: string; school: string; amendment: boolean;
+  id: string; version?: string; kind: AttestationKind; number: string; school: string; amendment: boolean;
   chairman: string; secretary: string; members: string[]; directions: string[]; programs: string[];
   disciplines: string[]; special?: string;
 };
@@ -27,5 +27,5 @@ export function saveAttestations(rows: AttestationRecord[]) { localStorage.setIt
 
 // Informational completeness indicator for the demo; not approval or business validation.
 export function isAttestationFilled(row: AttestationRecord) {
-  return Boolean(row.chairman && (row.kind === 'ppa' || row.secretary) && row.members.length && row.directions.length && row.programs.length && (row.kind !== 'ppa' || row.disciplines.length));
+  return Boolean(row.chairman && (row.kind === 'ppa' || row.secretary) && row.members.length && (row.special || (row.directions.length && row.programs.length)) && (row.kind !== 'ppa' || row.disciplines.length));
 }

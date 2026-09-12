@@ -1,7 +1,7 @@
 export type Person = { id: string; name: string; position: string; organization: string; degree: string; rank: string; kind: 'internal' | 'external'; initials: string; color: string };
 export type Program = { id: string; code: string; name: string; level: string; school: string };
 export type ChairmanProfile = { university: string; educationName: string; qualification: string; diplomaSeries: string; diplomaNumber: string; diplomaDate: string; department: string; speciality: string; certificateSeries: string; certificateNumber: string; certificateDate: string; honoraryTitle: string; publications: string; lectures: string; activity: string; experience: string };
-export type Commission = { id: string; number: string; year: string; school: string; type: 'regular' | 'complex'; chairmanId: string; secretaryId: string; internalIds: string[]; externalIds: string[]; programIds: string[]; profile: ChairmanProfile; updatedAt: string };
+export type Commission = { id: string; version?: string; gekId?: string; number: string; year: string; school: string; type: 'regular' | 'complex'; chairmanId: string; secretaryId: string; internalIds: string[]; externalIds: string[]; programIds: string[]; profile: ChairmanProfile; updatedAt: string };
 export const emptyProfile: ChairmanProfile = { university: '', educationName: '', qualification: '', diplomaSeries: '', diplomaNumber: '', diplomaDate: '', department: '', speciality: '', certificateSeries: '', certificateNumber: '', certificateDate: '', honoraryTitle: '', publications: '', lectures: '', activity: '', experience: '' };
 export const schools = [
  { id: 'management', short: 'ВШПМ', name: 'Высшая школа производственного менеджмента' },

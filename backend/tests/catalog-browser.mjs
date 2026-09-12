@@ -48,9 +48,11 @@ try {
       "disciplines",
     ]) {
       await page.goto("/data/catalog/" + kind);
-      await expect(page.locator(".people-table tbody tr")).toHaveCount(
-        catalog[kind].length,
-      );
+      await expect(
+        page.getByText("Всего записей: " + catalog[kind].length, {
+          exact: true,
+        }),
+      ).toBeVisible();
       await page.getByRole("button", { name: "Добавить", exact: true }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
       if (kind === "teachers")
@@ -62,7 +64,7 @@ try {
     if (username === "admin" && people.entries.external.length) {
       await page.goto("/data/people/external");
       await page
-        .locator(".people-table tbody tr")
+        .locator(".people-table tbody tr[data-index]")
         .first()
         .getByRole("button", { name: /Изменить/ })
         .click();
@@ -92,7 +94,7 @@ try {
       );
       await page.getByRole("button", { name: "Отмена", exact: true }).click();
       await page.unroute("**/api/v1/people/external/save");
-      await page.route("**/api/v1/catalog", (route) =>
+      await page.route("**/api/v1/catalog/schools/list**", (route) =>
         route.fulfill({
           status: 503,
           contentType: "application/json",
@@ -108,21 +110,25 @@ try {
       await expect(
         page.getByText("База данных временно недоступна.", { exact: true }),
       ).toBeVisible();
-      await expect(page.locator(".people-table tbody tr")).toHaveCount(0);
-      await page.unroute("**/api/v1/catalog");
+      await expect(
+        page.locator(".people-table tbody tr[data-index]"),
+      ).toHaveCount(0);
+      await page.unroute("**/api/v1/catalog/schools/list**");
     }
     for (const category of ["external", "chairmen", "complex"]) {
       await page.goto("/data/people/" + category);
-      await expect(page.locator(".people-table tbody tr")).toHaveCount(
-        people.entries[category].length,
-      );
+      await expect(
+        page.getByText("Всего записей: " + people.entries[category].length, {
+          exact: true,
+        }),
+      ).toBeVisible();
       await page.getByRole("button", { name: "Добавить", exact: true }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.getByRole("button", { name: "Отмена", exact: true }).click();
       const sample = people.entries[category][0];
       if (sample) {
         await page
-          .locator(".people-table tbody tr")
+          .locator(".people-table tbody tr[data-index]")
           .first()
           .getByRole("button", { name: /Изменить/ })
           .click();

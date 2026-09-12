@@ -3,13 +3,24 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/src/bootstrap.php';
 require dirname(__DIR__) . '/src/catalog.php';
 require dirname(__DIR__) . '/src/people.php';
+require dirname(__DIR__) . '/src/lists.php';
+require dirname(__DIR__) . '/src/archive.php';
+require dirname(__DIR__) . '/src/chairman-print.php';
+require dirname(__DIR__) . '/src/gek.php';
+require dirname(__DIR__) . '/src/gek-print.php';
+require dirname(__DIR__) . '/src/spo.php';
+require dirname(__DIR__) . '/src/spo-print.php';
+require dirname(__DIR__) . '/src/ppa.php';
+require dirname(__DIR__) . '/src/ppa-print.php';
+require dirname(__DIR__) . '/src/oop-status.php';
+require dirname(__DIR__) . '/src/oop.php';
 ini_set('display_errors', '0');
 $requestId = bin2hex(random_bytes(8));
 header('X-Request-ID: ' . $requestId);
 try {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $method = $_SERVER['REQUEST_METHOD'];
-    if ($path === '/api/v1/health' && $method === 'GET') respond(['data' => ['status' => 'ok', 'version' => '1.0.0']]);
+    if ($path === '/api/v1/health' && $method === 'GET') respond(['data' => ['status' => 'ok', 'version' => '2.0.0']]);
     startSession();
     if ($path === '/api/v1/auth/session' && $method === 'GET') respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf']]]);
     if ($path === '/api/v1/auth/login' && $method === 'POST') {
@@ -37,10 +48,84 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
+    if ($path==='/api/v1/oop/formation' && $method==='GET') respond(['data'=>readList(fn()=>oopResponse(oopSnapshot(listText($_GET,'program'))))]);
+    if ($path==='/api/v1/oop/formation' && $method==='POST') {
+        requireCsrf();respond(['data'=>saveOop(readJson(),$user)]);
+    }
+    if (preg_match('#^/api/v1/oop/status(/|$)#',$path)) {
+        requireAdmin($user);
+        if($path==='/api/v1/oop/status' && $method==='GET')respond(['data'=>readList(fn()=>oopStatusList($_GET))]);
+    }
+    if ($path === '/api/v1/gek/print' && $method === 'POST') {
+        requireCsrf();
+        respond(['data'=>['pdf'=>base64_encode(gekPrint(readJson()))]]);
+    }
+    if (preg_match('#^/api/v1/ppa/(context|save|delete|cover|print)$#D',$path,$match)) {
+        $action=$match[1];
+        if($method==='GET' && $action==='context')respond(['data'=>readList(fn()=>ppaContext())]);
+        if($method==='GET' && $action==='cover')respond(['data'=>readList(fn()=>ppaCover(($_GET['amendment']??'false')==='true',$_GET['school']??null))]);
+        if($method==='POST' && in_array($action,['save','delete','cover','print'],true)){
+            requireCsrf();$body=readJson();
+            $data=match($action){'save'=>savePpa($body),'delete'=>deletePpa($body),'cover'=>savePpaCover($body),'print'=>readList(fn()=>['pdf'=>base64_encode(ppaPrint($body))])};
+            respond(['data'=>$data]);
+        }
+    }
+    if (preg_match('#^/api/v1/(spo|ac)/(context|save|delete|cover|print)$#D', $path, $match)) {
+        $kind=$match[1];$action=$match[2];
+        if ($method==='GET' && $action==='context') respond(['data'=>readList(fn()=>spoContext($kind))]);
+        if ($method==='GET' && $action==='cover') respond(['data'=>readList(fn()=>spoCover($_GET['school']??null,$kind))]);
+        if ($method==='POST' && in_array($action,['save','delete','cover','print'],true)) {
+            requireCsrf();$body=readJson();
+            $data=match($action) {
+                'save'=>saveSpo($body,null,$kind),
+                'delete'=>deleteSpo($body,$kind),
+                'cover'=>saveSpoCover($body,$kind),
+                'print'=>readList(fn()=>['pdf'=>base64_encode(spoPrint($body,$kind))]),
+            };
+            respond(['data'=>$data]);
+        }
+    }
+    if ($path === '/api/v1/gek/context' && $method === 'GET') respond(['data'=>readList(fn()=>gekSnapshot($_GET['academicYear']??'2026/2027'))]);
+    if ($path === '/api/v1/gek/numbering' && $method === 'POST') {
+        requireCsrf();$body=readJson();
+        $start=filter_var($body['start']??null,FILTER_VALIDATE_INT);
+        if($start===false) throw new ApiError(422,'VALIDATION','Введите первый номер ГЭК.');
+        respond(['data'=>['start'=>gekNumbering(requiredText($body,'academicYear',true),$start)]]);
+    }
+    if ($method === 'POST' && in_array($path, ['/api/v1/gek/save','/api/v1/gek/delete'], true)) {
+        requireCsrf();
+        respond(['data'=>$path === '/api/v1/gek/save' ? saveGek(readJson()) : deleteGek(readJson())]);
+    }
+    if ($method === 'GET' && preg_match('#^/api/v1/people/(chairmen|complex)/print$#', $path, $matches)) {
+        respond(['data' => ['pdf' => base64_encode(chairmanPdf(chairmanPrintForms($matches[1], $_GET)))]]);
+    }
+    if($path==='/api/v1/archive/list' && $method==='GET')respond(['data'=>archiveList($_GET)]);
+    if($path==='/api/v1/archive/context' && $method==='GET')respond(['data'=>archiveContext(listText($_GET,'folder'))]);
+    if($path==='/api/v1/archive/download' && $method==='GET')archiveDownload(listText($_GET,'id'));
+    if($path==='/api/v1/archive/upload' && $method==='POST'){
+        requireCsrf();
+        respond(['data'=>archiveUpload($_POST,$_FILES['file']??[])]);
+    }
+    if($method==='POST' && preg_match('#^/api/v1/archive/(mkdir|rename|delete)$#',$path,$matches)){
+        requireCsrf();respond(['data'=>archiveMutate($matches[1],readJson())]);
+    }
+    if($method==='GET' && preg_match('#^/api/v1/(catalog|people)/([a-z]+)/list$#',$path,$matches))
+        respond(['data'=>readList(fn()=>$matches[1]==='catalog'?catalogList($matches[2],$_GET):peopleList($matches[2],$_GET))]);
+    if($method==='GET' && preg_match('#^/api/v1/options/([a-z]+)$#',$path,$matches))
+        respond(['data'=>readList(fn()=>optionList($matches[1],$_GET))]);
+    if($path==='/api/v1/catalog/context' && $method==='GET')
+        respond(['data'=>['schools'=>rows('SELECT id_school, name_school FROM school ORDER BY id_school')]]);
     if($path==='/api/v1/catalog'&&$method==='GET')respond(['data'=>transaction(fn()=>catalogSnapshot())]);
     if($path==='/api/v1/people'&&$method==='GET')respond(['data'=>transaction(fn()=>peopleSnapshot())]);
+    if(preg_match('#^/api/v1/people/([a-z]+)/archive$#',$path,$matches)&&$method==='POST'){
+        requireCsrf();$body=readJson();
+        archiveYear(requiredText($body,'academicYear',true));
+        respond(['data'=>chairmanArchiveFolder($matches[1],$body)]);
+    }
     if(preg_match('#^/api/v1/(catalog|people)/([a-z]+)/(save|delete)$#',$path,$matches)&&$method==='POST'){
         requireCsrf();$body=readJson();
+        if($matches[1]==='people' && $matches[3]==='save' && $matches[2]!=='external' && empty($body['id']))
+            archiveYear(requiredText($body,'academicYear',true));
         $handler=$matches[1]==='catalog'?($matches[3]==='save'?'saveCatalog':'deleteCatalog'):($matches[3]==='save'?'savePeople':'deletePeople');
         respond(['data'=>$handler($matches[2],$body)]);
     }

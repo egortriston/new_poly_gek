@@ -2,20 +2,17 @@ import { useState } from "react";
 import type { Person } from "../data/model";
 
 import { Field, Modal } from "./ui";
+import { RemoteSelect } from "./RemoteSelect";
 import { AppSelect } from "./AppSelect";
 import type { Entry } from "../pages/PeopleTable";
 export function AddPersonEntry({
   category,
-  people,
   schools,
-  entries,
   onAdd,
   onClose,
 }: {
   category: string;
-  people: Person[];
   schools: { id: string; name: string }[];
-  entries: Entry[];
   onAdd: (entry: Entry) => Promise<void>;
   onClose: () => void;
 }) {
@@ -34,7 +31,7 @@ export function AddPersonEntry({
   const [busy, setBusy] = useState(false);
   const submit = async () => {
     if (busy) return;
-    let person = people.find((p) => p.id === personId);
+    let person: Person | undefined;
     if (external) {
       if (!values.name.trim()) {
         setError("Укажите ФИО");
@@ -57,20 +54,16 @@ export function AddPersonEntry({
           .join(""),
       };
     } else {
-      if (!person || !sphere || (category === "chairmen" && !school)) {
+      if (!personId || !sphere || (category === "chairmen" && !school)) {
         setError(
           "Выберите человека, сферу деятельности и высшую школу, если она требуется.",
         );
         return;
       }
-      if (entries.some((e) => e.personId === person!.id)) {
-        setError("Карточка этого председателя уже существует");
-        return;
-      }
     }
     const row: Entry = {
       id: "",
-      personId: person!.id,
+      personId: external ? person!.id : personId,
       person: person!,
       sphere: (sphere || "Бизнес") as Entry["sphere"],
       schoolIds: school ? [school] : [],
@@ -154,7 +147,8 @@ export function AddPersonEntry({
         ) : (
           <>
             <Field label="Председатель" required>
-              <AppSelect
+              <RemoteSelect
+                source="chairmancandidates"
                 disabled={busy}
                 aria-label="Председатель"
                 required
@@ -163,16 +157,13 @@ export function AddPersonEntry({
                   setPersonId(e.target.value);
                   setError("");
                 }}
-              >
-                <option value="">Выберите человека</option>
-                {people.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.organization ? " · " + p.organization : ""}
-                  </option>
-                ))}
-              </AppSelect>
+                placeholder="Выберите человека"
+              />
             </Field>
+            <p className="field-hint">
+              Человек не может одновременно быть в карточках председателей ГЭК
+              и председателей комплексных ГЭК.
+            </p>
             <Field label="Сфера деятельности" required>
               <AppSelect
                 disabled={busy}

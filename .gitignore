@@ -5,3 +5,5 @@ dist/
 artifacts/
 backend/config.local.php
 backend/var/
+backend/vendor/
+storage/

@@ -87,7 +87,26 @@ function savePeople(string $category,array $body): array
             query('DELETE FROM sec_helper WHERE chairman=$1',[$smId]);
             insertRecord('sec_helper',['chairman'=>$smId,'id_school'=>$schools[0]],'id_sec');
         }
-        return ['id'=>$id];
+        $result=['id'=>$id];
+        if(!$old && isset($body['academicYear'])){
+            $member=rows('SELECT sm_name FROM sec_member WHERE sm_id=$1',[$smId])[0];
+            $result['archiveFolder']=archiveEnsureChairman($smId,requiredText($body,'academicYear',true),(string)$member['sm_name']);
+        }
+        return $result;
+    });
+}
+
+function chairmanArchiveFolder(string $category,array $body): array
+{
+    if(!in_array($category,['chairmen','complex'],true))throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
+    return transaction(function()use($category,$body){
+        $id=requiredText($body,'id',true);
+        $row=lockedRecord('sec_predsedatel_s','id_predsedatel_sc',$id);
+        if(($row['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');
+        requireVersion($body,chairState($row));
+        $member=rows('SELECT sm_name FROM sec_member WHERE sm_id=$1',[$row['sm_id']])[0]??null;
+        if(!$member)throw new ApiError(409,'MISSING_PERSON','Связанный участник отсутствует. Сначала нужно уточнить и восстановить связь карточки.');
+        return ['folder'=>archiveEnsureChairman((string)$row['sm_id'],requiredText($body,'academicYear',true),(string)$member['sm_name'])];
     });
 }
 function deletePeople(string $category,array $body): array

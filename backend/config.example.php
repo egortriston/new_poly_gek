@@ -7,4 +7,6 @@ return [
     'secure_cookie' => false, // true on the HTTPS deployment
     'idle_seconds' => 1800,
     'absolute_seconds' => 28800,
+    'archive_root' => dirname(__DIR__).'/storage/archive', // Private files, ignored by Git.
+    'archive_max_file_bytes' => 52428800, // Also configure PHP upload_max_filesize / post_max_size.
 ];

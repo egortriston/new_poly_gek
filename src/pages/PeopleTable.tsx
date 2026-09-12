@@ -2,18 +2,25 @@ import { PageTitle } from "../components/PageTitle";
 import { ExternalPersonEditor } from "../components/ExternalPersonEditor";
 import { AddPersonEntry } from "../components/AddPersonEntry";
 import { api } from "../api";
-import { useServerData, type ServerCatalog } from "../data/serverCatalog";
+import { useServerData } from "../data/serverCatalog";
+import {
+  useProgressiveList,
+  useDebounced,
+  type ListPage,
+} from "../data/useProgressiveList";
+import { ProgressiveRows } from "../components/ProgressiveRows";
 import type { Person } from "../data/model";
 import { AppSelect } from "../components/AppSelect";
 import { ChairmanCard } from "../components/ChairmanCard";
+import { ChairmanPrint } from "../components/ChairmanPrint";
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { Search, Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Search, Plus, Pencil, Trash2, RefreshCw, Printer, Archive } from "lucide-react";
 
 import { Avatar, Empty, Confirm } from "../components/ui";
 import { useStore } from "../store";
 export type Entry = {
-  person?: Person;
+  person?: Person & { missing?: boolean };
   version?: string;
   id: string;
   personId: string;
@@ -29,22 +36,28 @@ const titles: Record<string, string> = {
 export function PeopleTable() {
   const { category = "external" } = useParams();
   const [params, setParams] = useSearchParams();
-  const { notify } = useStore();
+  const { notify, year } = useStore();
+  const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<Entry | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [query, setQuery] = useState("");
   const [sphere, setSphere] = useState("");
   const [entry, setEntry] = useState<Entry | null>(null);
+  const [printing, setPrinting] = useState<Entry | null>(null);
 
-  const source = useServerData<{
-    people: (Person & { missing?: boolean })[];
-    entries: Record<string, Entry[]>;
-  }>("/people");
-  const catalog = useServerData<ServerCatalog>("/catalog");
+  const settled = useDebounced(query);
+  const listPath =
+    "/people/" +
+    category +
+    "/list?" +
+    new URLSearchParams({ q: settled, sphere });
+  const source = useProgressiveList<Entry>(listPath, "id");
+  const catalog = useServerData<{
+    schools: { id_school: string; name_school: string }[];
+  }>("/catalog/context");
   const [busy, setBusy] = useState(false);
-  const all = source.data?.entries ?? {};
-  const people = source.data?.people ?? [];
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const schools = (catalog.data?.schools ?? []).map((s) => ({
     id: s.id_school,
     name: s.name_school,
@@ -52,12 +65,15 @@ export function PeopleTable() {
   const schoolName = (id: string) =>
     schools.find((s) => s.id === id)?.name ?? "—";
   const reload = async () => {
-    await Promise.all([source.reload(), catalog.reload()]);
+    setDeleteError("");
+    await source.reload().catch(() => {});
+    await catalog.reload();
   };
   const add = async (row: Entry) => {
     const result = await api<{ id: string }>("/people/" + category + "/save", {
       ...row,
       id: null,
+      academicYear: year+'/'+(Number(year)+1),
     });
     setAdding(false);
     setQuery("");
@@ -73,14 +89,32 @@ export function PeopleTable() {
     }
     setParams({ card: result.id });
   };
+
   useEffect(() => {
-    const personId = params.get("person"),
-      card = params.get("card");
-    const found = (source.data?.entries[category] ?? []).find((e) =>
-      card ? e.id === card : personId ? e.personId === personId : false,
-    );
-    setEntry(found ? structuredClone(found) : null);
-  }, [category, params, source.data]);
+    setEntry(null);
+    const id = params.get("card"),
+      person = params.get("person");
+    if (!id && !person) return;
+    const controller = new AbortController();
+    api<ListPage<Entry>>(
+      "/people/" +
+        category +
+        "/list?" +
+        new URLSearchParams(id ? { id } : { person: person! }),
+      undefined,
+      controller.signal,
+    )
+      .then((page) => {
+        if (!controller.signal.aborted) {
+          setEntry(page.items[0] ?? null);
+          if (!page.items.length) setDeleteError("Карточка не найдена.");
+        }
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) setDeleteError(error.message);
+      });
+    return () => controller.abort();
+  }, [category, params]);
   useEffect(() => {
     setQuery("");
     setSphere("");
@@ -96,18 +130,8 @@ export function PeopleTable() {
       />
     );
   const external = category === "external";
-  const rows = (all[category] ?? []).filter((e) => {
-    const p = people.find((p) => p.id === e.personId);
-    return (
-      p &&
-      (!sphere || e.sphere === sphere) &&
-      `${p.name} ${p.organization}`
-        .toLocaleLowerCase("ru")
-        .includes(query.toLocaleLowerCase("ru"))
-    );
-  });
-  const person = people.find((p) => p.id === entry?.personId);
-
+  const rows = source.items;
+  const person = entry?.person;
   const savePerson = async (updated: Person) => {
     if (!entry) return;
     await api("/people/external/save", {
@@ -126,12 +150,26 @@ export function PeopleTable() {
     if (!entry) throw new Error("Карточка не найдена");
     await api("/people/" + category + "/save", entry);
     // Read the fresh version before allowing the next edit.
-    const next = await source.reload();
-    const saved = next.entries[category].find((row) => row.id === entry.id);
+    const next = await api<ListPage<Entry>>(
+      "/people/" + category + "/list?id=" + encodeURIComponent(entry.id),
+    );
+    const saved = next.items[0];
     if (!saved)
       throw new Error("Обновите таблицу: сохранённая карточка не найдена.");
+    setEntry(saved);
+    void source.reload().catch(() => {});
     notify("Карточка сохранена");
     return saved;
+  };
+  const archiveEntry = async (selected: Entry | null = entry) => {
+    if (!selected) throw new Error("Карточка не найдена");
+    const result = await api<{ folder: string }>("/people/" + category + "/archive", {
+      id: selected.id,
+      version: selected.version,
+      academicYear: year + "/" + (Number(year) + 1),
+    });
+    notify("Папка архива готова");
+    navigate("/archive?folder=" + encodeURIComponent(result.folder));
   };
   const deleteEntry = async () => {
     if (!deleting || busy) return;
@@ -151,7 +189,7 @@ export function PeopleTable() {
       setBusy(false);
     }
   };
-  if (!source.data || !catalog.data)
+  if (!catalog.data)
     return (
       <Empty
         title={source.error || catalog.error || "Загрузка справочников…"}
@@ -173,6 +211,7 @@ export function PeopleTable() {
     );
   if (entry && person && !external)
     return (
+      <>
       <ChairmanCard
         key={entry.id}
         entry={entry}
@@ -180,9 +219,13 @@ export function PeopleTable() {
         complex={category === "complex"}
         schools={schools}
         onChange={setEntry}
+        onArchive={() => archiveEntry()}
+        onPrint={() => setPrinting(entry)}
         onSave={save}
         onBack={() => setParams({})}
       />
+      {printing && <ChairmanPrint entry={printing} category={category} onClose={() => setPrinting(null)} />}
+      </>
     );
   return (
     <div className="page-enter hub-page">
@@ -197,11 +240,7 @@ export function PeopleTable() {
             <Plus size={16} /> Добавить
           </button>
         </div>
-        <p>
-          {external
-            ? "Сведения о представителях внешних организаций."
-            : "Карточки по сферам «Образование» и «Бизнес» с разным составом полей."}
-        </p>
+        {external && <p>Сведения о представителях внешних организаций.</p>}
       </div>
       {params.get("person") && !entry && (
         <p className="info-note">
@@ -236,7 +275,11 @@ export function PeopleTable() {
               <option>Бизнес</option>
             </AppSelect>
           )}
-          <span className="muted">{rows.length} записей</span>
+
+          {source.ready && (
+            <span className="muted">Всего записей: {source.total}</span>
+          )}
+
           <button
             className="icon-button"
             aria-label="Обновить таблицу"
@@ -250,7 +293,7 @@ export function PeopleTable() {
           </button>
         </div>
         <div className="people-table-scroll">
-          <table className="people-table">
+          <table className={`people-table progressive-table${external ? "" : " chairman-table"}`}>
             <thead>
               <tr>
                 <th>ФИО</th>
@@ -264,9 +307,25 @@ export function PeopleTable() {
                 <th>Действия</th>
               </tr>
             </thead>
-            <tbody>
-              {rows.map((e) => {
-                const p = people.find((p) => p.id === e.personId)!;
+            <ProgressiveRows
+              rows={rows}
+              rowKey={(row) => row.id}
+              columns={external ? 3 : 5}
+              resetKey={listPath}
+              hasMore={source.hasMore}
+              loading={source.loading}
+              error={source.error}
+              onMore={() =>
+                void (
+                  source.error
+                    ? source.retry()
+                    : source.ready
+                      ? source.more()
+                      : source.reload()
+                ).catch(() => {})
+              }
+              renderRow={(e) => {
+                const p = e.person!;
                 return (
                   <tr key={e.id}>
                     <td>
@@ -289,6 +348,37 @@ export function PeopleTable() {
                     )}
                     <td>
                       <div className="button-row">
+                        {!external && (
+                          <>
+                            <button
+                              className="icon-button"
+                              title="Печать"
+                              aria-label={`Печать — ${p.name}`}
+                              onClick={() => setPrinting(e)}
+                            >
+                              <Printer size={15} />
+                            </button>
+                            <button
+                              className="icon-button"
+                              title="Архив"
+                              aria-label={`Архив — ${p.name}`}
+                              disabled={archivingId !== null || p.missing}
+                              onClick={async () => {
+                                setArchivingId(e.id);
+                                setDeleteError("");
+                                try {
+                                  await archiveEntry(e);
+                                } catch (error) {
+                                  setDeleteError((error as Error).message);
+                                } finally {
+                                  setArchivingId(null);
+                                }
+                              }}
+                            >
+                              {archivingId === e.id ? <RefreshCw size={15} /> : <Archive size={15} />}
+                            </button>
+                          </>
+                        )}
                         <button
                           className="icon-button"
                           title="Изменить"
@@ -312,22 +402,21 @@ export function PeopleTable() {
                     </td>
                   </tr>
                 );
-              })}
-            </tbody>
+              }}
+            />
           </table>
         </div>
-        {!rows.length && (
+        {!rows.length && !source.loading && !source.error && (
           <Empty title="Ничего не найдено">
             Измените поиск или сферу деятельности.
           </Empty>
         )}
       </div>
+      {printing && <ChairmanPrint entry={printing} category={category} onClose={() => setPrinting(null)} />}
       {adding && (
         <AddPersonEntry
           category={category}
-          people={people.filter((person) => !person.missing)}
           schools={schools}
-          entries={[...all.chairmen, ...all.complex]}
           onAdd={add}
           onClose={() => setAdding(false)}
         />
@@ -350,7 +439,7 @@ export function PeopleTable() {
           }}
           onConfirm={deleteEntry}
         >
-          «{people.find((p) => p.id === deleting.personId)?.name}».{" "}
+          «{deleting.person?.name}».{" "}
           {deleteError || "Связанные с комиссиями записи удалить нельзя."}
         </Confirm>
       )}

@@ -13,7 +13,8 @@ import {
   NotebookPen,
   RefreshCw,
 } from "lucide-react";
-import { AppSelect } from "../components/AppSelect";
+import { RemoteSelect } from "../components/RemoteSelect";
+import { ProgressiveRows } from "../components/ProgressiveRows";
 import { Avatar, Empty, Field, Modal, Confirm } from "../components/ui";
 import { useStore } from "../store";
 import {
@@ -109,10 +110,9 @@ export function CatalogTable() {
   );
 }
 import { api } from "../api";
-import { useServerData, type ServerCatalog } from "../data/serverCatalog";
+import { useProgressiveList, useDebounced } from "../data/useProgressiveList";
 
 function Table({ kind }: { kind: CatalogKind }) {
-  const source = useServerData<ServerCatalog>("/catalog");
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [edit, setEdit] = useState<CatalogRow | null>(null);
@@ -121,7 +121,6 @@ function Table({ kind }: { kind: CatalogKind }) {
   const [busy, setBusy] = useState(false);
   const [remove, setRemove] = useState<CatalogRow | null>(null);
   const { notify } = useStore();
-  const data = source.data;
   const pk = primaryKeys[kind];
   const formFields: CatalogField[] =
     kind === "teachers"
@@ -148,37 +147,29 @@ function Table({ kind }: { kind: CatalogKind }) {
         ? "levels"
         : "schools";
   const filter = params.get(filterKey) ?? "";
-  const options = (ref: string) =>
-    !data
-      ? []
-      : ref === "levels"
-        ? data.levels.map((l) => ({ value: l.id, label: l.name }))
-        : ref === "schools"
-          ? data.schools.map((s) => ({
-              value: s.id_school,
-              label: s.name_school,
-            }))
-          : data.directions.map((d) => ({
-              value: d.id_direction,
-              label: d.number_direction + " · " + d.name_direction,
-            }));
-  const refName = (ref: string, id: string) =>
-    options(ref).find((o) => o.value === id)?.label ?? "—";
-  const rows = (data?.[kind] ?? []).filter(
-    (r) =>
-      (!params.get("search") || r[pk] === params.get("search")) &&
-      (!filter || r[filterKey] === filter) &&
-      columns
-        .map((f) => (f.ref ? refName(f.ref, r[f.key]) : r[f.key]))
-        .join(" ")
-        .toLocaleLowerCase("ru")
-        .includes(query.toLocaleLowerCase("ru")),
-  );
+
+  const settled = useDebounced(query);
+  const listPath =
+    "/catalog/" +
+    kind +
+    "/list?" +
+    new URLSearchParams({
+      q: settled,
+      [filterKey]: filter,
+      id: params.get("search") ?? "",
+    });
+  const source = useProgressiveList<CatalogRow>(listPath, pk);
+  const rows = source.items;
+  const refName = (ref: string, _id: string, row: CatalogRow) =>
+    row[
+      ref === "schools" ? "_school" : ref === "levels" ? "_level" : "_direction"
+    ] || "—";
   const refresh = async () => {
+    setError("");
     try {
       await source.reload();
-    } catch (error) {
-      setError((error as Error).message);
+    } catch {
+      /* The list displays the error and retries the same request. */
     }
   };
   const save = async () => {
@@ -258,7 +249,6 @@ function Table({ kind }: { kind: CatalogKind }) {
         </div>
         <button
           className="button primary"
-          disabled={!data}
           onClick={() => {
             setFresh(true);
             setError("");
@@ -275,18 +265,7 @@ function Table({ kind }: { kind: CatalogKind }) {
           <Plus size={16} /> Добавить
         </button>
       </div>
-      {!data ? (
-        <Empty
-          title={source.error || "Загрузка справочника…"}
-          action={
-            source.error ? (
-              <button className="button secondary" onClick={refresh}>
-                Повторить
-              </button>
-            ) : undefined
-          }
-        />
-      ) : (
+      {
         <>
           {error && !edit && !remove && (
             <p className="form-error" role="alert">
@@ -305,30 +284,29 @@ function Table({ kind }: { kind: CatalogKind }) {
                 />
               </div>
               {filterKey && (
-                <AppSelect
+                <RemoteSelect
+                  source={filterRef}
                   aria-label="Фильтр справочника"
                   value={filter}
+                  placeholder={
+                    filterRef === "directions"
+                      ? "Все направления"
+                      : filterRef === "schools"
+                        ? "Все высшие школы"
+                        : "Все уровни"
+                  }
                   onChange={(e) =>
                     setParams(
                       e.target.value ? { [filterKey]: e.target.value } : {},
                     )
                   }
-                >
-                  <option value="">
-                    {filterRef === "directions"
-                      ? "Все направления"
-                      : filterRef === "schools"
-                        ? "Все высшие школы"
-                        : "Все уровни"}
-                  </option>
-                  {options(filterRef).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </AppSelect>
+                />
               )}
-              <span className="muted">Записей: {rows.length}</span>
+
+              {source.ready && (
+                <span className="muted">Всего записей: {source.total}</span>
+              )}
+
               <button
                 className="icon-button"
                 aria-label="Обновить таблицу"
@@ -340,7 +318,7 @@ function Table({ kind }: { kind: CatalogKind }) {
               </button>
             </div>
             <div className="people-table-scroll">
-              <table className="people-table catalog-table">
+              <table className="people-table catalog-table progressive-table">
                 <thead>
                   <tr>
                     {columns.map((f) => (
@@ -350,8 +328,24 @@ function Table({ kind }: { kind: CatalogKind }) {
                     <th>Действия</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((row) => (
+                <ProgressiveRows
+                  rows={rows}
+                  rowKey={(row) => row[pk]}
+                  columns={columns.length + (kind === "directions" ? 2 : 1)}
+                  resetKey={listPath}
+                  hasMore={source.hasMore}
+                  loading={source.loading}
+                  error={source.error}
+                  onMore={() =>
+                    void (
+                      source.error
+                        ? source.retry()
+                        : source.ready
+                          ? source.more()
+                          : source.reload()
+                    ).catch(() => {})
+                  }
+                  renderRow={(row) => (
                     <tr key={row[pk]}>
                       {columns.map((f) => (
                         <td key={f.key}>
@@ -378,10 +372,10 @@ function Table({ kind }: { kind: CatalogKind }) {
                                 encodeURIComponent(row.id_direction)
                               }
                             >
-                              {refName(f.ref, row[f.key])}
+                              {refName(f.ref, row[f.key], row)}
                             </Link>
                           ) : f.ref ? (
-                            refName(f.ref, row[f.key])
+                            refName(f.ref, row[f.key], row)
                           ) : (
                             row[f.key] || "—"
                           )}
@@ -396,12 +390,8 @@ function Table({ kind }: { kind: CatalogKind }) {
                               encodeURIComponent(row.id_direction)
                             }
                           >
-                            {
-                              data.programs.filter(
-                                (p) => p.id_direction === row.id_direction,
-                              ).length
-                            }{" "}
-                            программ <ArrowUpRight size={14} />
+                            {row._program_count} программ{" "}
+                            <ArrowUpRight size={14} />
                           </Link>
                         </td>
                       )}
@@ -431,18 +421,18 @@ function Table({ kind }: { kind: CatalogKind }) {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
+                  )}
+                />
               </table>
             </div>
-            {!rows.length && (
+            {!rows.length && !source.loading && !source.error && (
               <Empty title="Записи не найдены">
                 Измените фильтр или добавьте запись.
               </Empty>
             )}
           </div>
         </>
-      )}
+      }
       {edit && (
         <Modal
           wide
@@ -487,21 +477,16 @@ function Table({ kind }: { kind: CatalogKind }) {
                 {formFields.map((f) => (
                   <Field key={f.key} label={f.label} required={f.required}>
                     {f.ref ? (
-                      <AppSelect
+                      <RemoteSelect
+                        source={f.ref}
                         aria-label={f.label}
                         value={edit[f.key] ?? ""}
                         required={f.required}
+                        disabled={busy}
                         onChange={(e) =>
                           setEdit({ ...edit, [f.key]: e.target.value })
                         }
-                      >
-                        <option value="">Выберите значение</option>
-                        {options(f.ref).map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </AppSelect>
+                      />
                     ) : (
                       <input
                         aria-label={f.label}

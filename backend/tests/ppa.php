@@ -1,0 +1,26 @@
+<?php
+require __DIR__.'/catalog.php';
+require dirname(__DIR__).'/src/archive.php';
+require dirname(__DIR__).'/src/ppa.php';
+require dirname(__DIR__).'/src/ppa-print.php';
+$discipline=insertRecord('discipline',['name_discipline'=>'Тест ППА','id_school'=>$school,'id_level'=>'1'],'id_discipline');
+$body=['number'=>'1','school'=>$school,'amendment'=>false,'chairman'=>$teacher,'members'=>[],'directions'=>[$direction],'programs'=>[$program],'disciplines'=>[$discipline]];
+$saved=savePpa($body);
+check($saved['disciplines']===[$discipline],'Discipline relation');
+expectError('DUPLICATE',fn()=>savePpa($body));
+$amended=savePpa([...$body,'amendment'=>true]);
+check($amended['id']!==$saved['id'],'Separate numbering for amendments');
+expectError('VALIDATION',fn()=>savePpa([...$saved,'amendment'=>true]));
+expectError('DUPLICATE_ROLE',fn()=>savePpa([...$saved,'members'=>[$teacher]]));
+$changed=savePpa([...$saved,'chairman'=>'','disciplines'=>[]]);
+expectError('STALE_RECORD',fn()=>savePpa($saved));
+$normal=savePpaCover([...ppaCover(false),'num'=>'10','cover_date'=>'2026-09-12','cover_year'=>'2026/2027']);
+$extra=savePpaCover([...ppaCover(true),'num'=>'10','cover_date'=>'2026-09-12','num_add'=>'11','cover_date_add'=>'2026-09-13','cover_year'=>'2026/2027','opt'=>'дополнения','dir'=>'служебной записки']);
+check(ppaCover(false)['num']==='10' && $extra['num_add']==='11','Separate cover records');
+expectError('VALIDATION',fn()=>savePpaCover([...$normal,'cover_date'=>'2026-02-31']));
+$schoolCover=savePpaCover([...ppaCover(false,$school),'num'=>'99','cover_date'=>'2026-09-12','cover_year'=>'2026/2027']);
+check(ppaCover(false,$school)['num']==='99' && ppaCover(false)['num']==='10','School cover isolation');
+expectError('INVALID_REFERENCE',fn()=>ppaCover(false,'invalid'));
+deletePpa($changed);deletePpa($amended);
+check(count(rows('SELECT 1 FROM teacher WHERE id_teacher=$1',[$teacher]))===1,'Teacher preserved');
+echo "PASS PPA: CRUD, disciplines, separate numbering, stale updates, covers, roles, deletion. Public DB unchanged.\n";

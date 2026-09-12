@@ -1,0 +1,63 @@
+.progressive-table {
+  table-layout: fixed;
+  min-width: 780px;
+}
+.progressive-table td {
+  overflow-wrap: anywhere;
+}
+.progressive-table th:last-child {
+  width: 105px;
+}
+.progressive-table.chairman-table th:nth-child(4) {
+  width: 112px;
+}
+.progressive-table.chairman-table th:last-child {
+  width: 172px;
+}
+.chairman-table td:last-child .button-row {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.progressive-table .people-cell {
+  min-width: 0;
+}
+.progressive-table .avatar {
+  flex-shrink: 0;
+}
+.list-loading {
+  text-align: center;
+  color: #74836b;
+}
+.list-loading .text-button {
+  margin: 0 12px;
+}
+.remote-select-menu {
+  max-height: none;
+  box-sizing: border-box;
+  animation: none;
+}
+.remote-option {
+  box-sizing: border-box;
+  min-height: 48px;
+  white-space: normal;
+  padding: 12px 30px 12px 12px;
+  cursor: pointer;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.remote-option.is-active {
+  background: #eef3e7;
+}
+.remote-select-menu [role="listbox"] { overscroll-behavior: contain; scrollbar-width: thin; }
+.chairman-print-frame {
+  width: 100%;
+  height: 65vh;
+  margin-top: 20px;
+  border: 1px solid #dce3d5;
+  background: white;
+}
+.remote-option svg {
+  position: absolute;
+  right: 9px;
+  top: 15px;
+}
