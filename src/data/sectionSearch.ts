@@ -2,6 +2,7 @@ export type SectionDestination = { title: string; path: string; group: string; k
 
 // Add each new page here together with words that users might use to find it.
 export const sectionDestinations: SectionDestination[] = [
+ {title:'Управление базами',path:'/databases',group:'Администрирование',keywords:'база бд копия копирование учебный период по умолчанию'},
  {title:'Общие исходные данные ООП',path:'/oop/data/general',group:'Исходные данные ООП',keywords:'общие справочники образовательных программ'},
  {title:'Наименования областей ПД',path:'/oop/data/general/areas',group:'Общие исходные данные',keywords:'код область профессиональная деятельность'},
  {title:'Типы задач ПД',path:'/oop/data/general/types',group:'Общие исходные данные',keywords:'тип задачи профессиональная деятельность'},

@@ -13,7 +13,7 @@ function configuration(): array
 {
     static $config;
     if ($config === null) {
-        $path = dirname(__DIR__) . '/config.local.php';
+        $path = getenv('POLYTECH_CONFIG') ?: dirname(__DIR__) . '/config.local.php';
         if (!is_file($path)) throw new ApiError(503, 'NOT_CONFIGURED', 'Сервер не настроен. Обратитесь к администратору.');
         $config = array_replace(require dirname(__DIR__) . '/config.example.php', require $path);
     }
@@ -30,24 +30,34 @@ function respond(array $body, int $status = 200): never
     exit;
 }
 
+function databaseNamed(string $name): PgSql\Connection
+{
+    static $connections = [];
+    if (!isset($connections[$name])) {
+        $parts = [];
+        foreach (array_replace(configuration()['db'], ['dbname'=>$name]) as $key=>$value) {
+            if (!in_array($key, ['host','port','dbname','user','password'], true)) continue;
+            $parts[]=$key."='".str_replace(['\\', "'"], ['\\\\', "\\'"], (string)$value)."'";
+        }
+        $connection=@pg_connect(implode(' ', $parts).' connect_timeout=5', PGSQL_CONNECT_FORCE_NEW);
+        if (!$connection) throw new ApiError(503,'DATABASE_UNAVAILABLE','База данных временно недоступна.');
+        $connections[$name]=$connection;
+    }
+    return $connections[$name];
+}
+
 function database(): PgSql\Connection
 {
-    static $connection;
-    if (!$connection) {
-        $parts = [];
-        foreach (configuration()['db'] as $key => $value) {
-            if (!in_array($key, ['host', 'port', 'dbname', 'user', 'password'], true)) continue;
-            $parts[] = $key . "='" . str_replace(['\\', "'"], ['\\\\', "\\'"], (string)$value) . "'";
-        }
-        $connection = @pg_connect(implode(' ', $parts) . ' connect_timeout=5');
-        if (!$connection) throw new ApiError(503, 'DATABASE_UNAVAILABLE', 'База данных временно недоступна. Повторите попытку позже.');
-    }
-    return $connection;
+    return databaseNamed(PHP_SAPI==='cli' ? configuration()['db']['dbname'] : selectedDatabase()['database']);
 }
 
 function query(string $sql, array $params = []): PgSql\Result
 {
-    $connection=database();
+    return queryConnection(database(),$sql,$params);
+}
+
+function queryConnection(PgSql\Connection $connection,string $sql,array $params=[]): PgSql\Result
+{
     if(!@pg_send_query_params($connection,$sql,$params))throw new RuntimeException('Database query failed');
     $result=pg_get_result($connection);
     while (pg_get_result($connection) !== false) { /* Drain the single-statement result stream. */ }
@@ -118,6 +128,7 @@ function readJson(): array
     try { $body = json_decode($raw, true, 32, JSON_THROW_ON_ERROR); }
     catch (JsonException) { throw new ApiError(400, 'INVALID_JSON', 'Неверный формат запроса.'); }
     if (!is_array($body)) throw new ApiError(400, 'INVALID_JSON', 'Неверный формат запроса.');
+    if (PHP_SAPI!=='cli' && isset($_SESSION['user_id']) && array_key_exists('academicYear',$body)) $body['academicYear']=selectedDatabase()['academicYear'];
     return $body;
 }
 
@@ -135,3 +146,5 @@ function loginThrottle(bool $failed = false): void
         ftruncate($file, 0); rewind($file); fwrite($file, json_encode($events));
     } finally { flock($file, LOCK_UN); fclose($file); }
 }
+
+require_once __DIR__.'/databases.php';

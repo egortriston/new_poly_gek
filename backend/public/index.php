@@ -26,7 +26,7 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
     if ($path === '/api/v1/health' && $method === 'GET') respond(['data' => ['status' => 'ok', 'version' => '2.0.0']]);
     startSession();
-    if ($path === '/api/v1/auth/session' && $method === 'GET') respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf']]]);
+    if ($path === '/api/v1/auth/session' && $method === 'GET') respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf'], 'databases'=>databaseSession()]]);
     if ($path === '/api/v1/auth/login' && $method === 'POST') {
         requireCsrf(); loginThrottle();
         $body = readJson();
@@ -43,7 +43,7 @@ try {
         if (!in_array($role, ['admin', 'rop'], true)) throw new ApiError(403, 'ROLE_NOT_ASSIGNED', 'Доступ не настроен. Обратитесь к администратору.');
         session_regenerate_id(true);
         $_SESSION = ['user_id' => $row['user_id'], 'created' => time(), 'last_seen' => time(), 'csrf' => bin2hex(random_bytes(32))];
-        respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf']]]);
+        respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf'], 'databases'=>databaseSession()]]);
     }
     if ($path === '/api/v1/auth/logout' && $method === 'POST') {
         requireCsrf();
@@ -52,6 +52,14 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
+    databaseSession();
+    if($method!=='GET'||isset($_SERVER['HTTP_X_DATABASE_CONTEXT']))requireDatabaseContext();
+    if($path==='/api/v1/databases/switch'&&$method==='POST'){requireCsrf();respond(['data'=>switchDatabase(readJson(),$user)]);}
+    if($path==='/api/v1/databases/choices'&&$method==='GET')respond(['data'=>databaseSession()]);
+    if($path==='/api/v1/databases'&&$method==='GET'){requireAdmin($user);respond(['data'=>databaseRegistryStatus()]);}
+    if($path==='/api/v1/databases/default'&&$method==='POST'){requireAdmin($user);requireCsrf();respond(['data'=>defaultDatabase(requiredText(readJson(),'id',true))]);}
+    if($path==='/api/v1/databases/create'&&$method==='POST'){requireAdmin($user);requireCsrf();respond(['data'=>createDatabaseCopy(readJson())],202);}
+    $_GET['academicYear']=selectedDatabase()['academicYear'];
     if(preg_match('#^/api/v1/oop/directions/([^/]+)/(list|save|delete|options/([0-9]+))$#D',$path,$match)){
         requireAdmin($user);
         if($method==='GET'&&isset($match[3]))respond(['data'=>readList(fn()=>oopDirectionOptions($match[1],$match[3],$_GET))]);

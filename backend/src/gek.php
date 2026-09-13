@@ -6,7 +6,10 @@ function gekNumbering(string $period, ?int $start = null): int
     archiveYear($period);
     $dir=dirname(__DIR__).'/var';
     if(!is_dir($dir)) mkdir($dir,0750,true);
-    $file=fopen($dir.'/gek-numbering.json','c+');
+    $name=PHP_SAPI==='cli'?configuration()['db']['dbname']:selectedDatabase()['database'];
+    $path=$dir.'/gek-numbering-'.hash('sha256',$name).'.json';
+    if(!is_file($path)&&$name===configuration()['db']['dbname']&&is_file($dir.'/gek-numbering.json'))copy($dir.'/gek-numbering.json',$path);
+    $file=fopen($path,'c+');
     if(!$file || !flock($file,LOCK_EX)) throw new ApiError(503,'SETTINGS_UNAVAILABLE','Не удалось прочитать настройки нумерации.');
     try {
         $raw=stream_get_contents($file);

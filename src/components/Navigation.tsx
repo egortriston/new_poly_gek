@@ -1,10 +1,10 @@
 import { useStore } from '../store';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, House, Layers3, GraduationCap, Database, Archive, BookOpen } from 'lucide-react';
+import { ChevronDown, House, Layers3, GraduationCap, Database, Server, Archive, BookOpen } from 'lucide-react';
 export function Navigation({ onNavigate }: { onNavigate: () => void }) {
  const { user } = useStore();
- const { pathname } = useLocation(); const isGek = pathname.startsWith('/gek') || pathname.startsWith('/commissions'); const isData = pathname.startsWith('/data');
+ const { pathname } = useLocation(); const isGek = pathname.startsWith('/gek') || pathname.startsWith('/commissions'); const isData = pathname === '/data' || pathname.startsWith('/data/');
  const [open, setOpen] = useState({ oop: pathname.startsWith('/oop'), attestation: pathname.startsWith('/attestation'), gek: isGek, data: isData, people: pathname.includes('/people')||pathname.endsWith('/teachers'), structure:pathname.includes('/structure')||pathname.endsWith('/schools'), education:pathname.includes('/education')||['/directions','/programs','/disciplines'].some(x=>pathname.endsWith(x)) });
  useEffect(() => { setOpen(o => ({ ...o, ...(pathname.startsWith('/oop') ? {oop:true} : {}), ...(pathname.startsWith('/attestation') ? { attestation: true } : {}), ...(isGek ? { gek: true } : {}), ...(isData ? { data: true } : {}), ...(pathname.includes('/people')||pathname.endsWith('/teachers') ? { people: true } : {}), ...(pathname.includes('/structure')||pathname.endsWith('/schools')?{structure:true}:{}), ...(pathname.includes('/education')||['/directions','/programs','/disciplines'].some(x=>pathname.endsWith(x))?{education:true}:{}) })); }, [pathname, isGek, isData]);
  const [oopDataOpen,setOopDataOpen]=useState(pathname.startsWith('/oop/data'));
@@ -23,5 +23,5 @@ export function Navigation({ onNavigate }: { onNavigate: () => void }) {
  <div className="tree-heading"><Database size={17}/>{link('/data','Исходные данные')}<button aria-label="Подразделы исходных данных" aria-expanded={open.data} onClick={() => setOpen(o => ({...o,data:!o.data}))}><ChevronDown size={14}/></button></div>
  {open.data && <div className="tree-branch"><div className="tree-heading">{link('/data/people','Люди')}<button aria-label="Таблицы людей" aria-expanded={open.people} onClick={() => setOpen(o => ({...o,people:!o.people}))}><ChevronDown size={14}/></button></div>{open.people && <div className="tree-branch">{link('/data/catalog/teachers','Преподаватели')}{link('/data/people/external','Внешние члены ГЭК')}{link('/data/people/chairmen','Председатели ГЭК')}{link('/data/people/complex','Председатели комплексных ГЭК')}</div>}<div className="tree-heading">{link('/data/structure','Структура университета')}<button aria-label="Таблицы структуры" aria-expanded={open.structure} onClick={()=>setOpen(o=>({...o,structure:!o.structure}))}><ChevronDown size={14}/></button></div>{open.structure&&<div className="tree-branch">{link('/data/catalog/schools','Высшие школы')}</div>}<div className="tree-heading">{link('/data/education','Образование')}<button aria-label="Таблицы образования" aria-expanded={open.education} onClick={()=>setOpen(o=>({...o,education:!o.education}))}><ChevronDown size={14}/></button></div>{open.education&&<div className="tree-branch">{link('/data/catalog/directions','Направления подготовки')}{link('/data/catalog/programs','Образовательные программы')}{link('/data/catalog/disciplines','Дисциплины')}</div>}</div>}
  <div className="tree-heading"><Archive size={17}/>{link('/archive','Архив')}</div>
- </nav>;
+ {user?.role==='admin'&&<div className="tree-heading"><Server size={17}/>{link('/databases','Управление базами')}</div>}</nav>;
 }
