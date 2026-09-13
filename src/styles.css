@@ -302,3 +302,19 @@
 .attestation-clickable-row{cursor:pointer}.attestation-clickable-row:focus-visible{outline:2px solid #507948;outline-offset:-2px}
 
 .oop-editor-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+
+.matrix-scroll-control { display:flex; align-items:center; gap:12px; padding:8px 16px; background:#f8faf7; border:0; }
+.matrix-scroll-arrow { display:grid; place-items:center; flex:none; width:28px; height:28px; border:0; border-radius:8px; color:#426b4c; background:white; cursor:pointer; }
+.matrix-scroll-arrow:hover:not(:disabled) { background:#eaf1e7; border-color:#aec5ad; }
+.matrix-scroll-arrow:disabled { opacity:.35; cursor:default; }
+.matrix-scroll-slider { appearance:none; -webkit-appearance:none; flex:1; min-width:0; height:28px; margin:0; background:transparent; cursor:grab; }
+.matrix-scroll-slider:active { cursor:grabbing; }
+.matrix-scroll-slider::-webkit-slider-runnable-track { height:5px; background:#dfe8dc; border-radius:8px; }
+.matrix-scroll-slider::-webkit-slider-thumb { appearance:none; -webkit-appearance:none; width:44px; height:13px; margin-top:-4px; border:2px solid #f8faf7; border-radius:12px; background:#64876a; box-shadow:0 1px 3px #26462b26; }
+.matrix-scroll-slider::-moz-range-track { height:5px; border-radius:8px; background:#dfe8dc; }
+.matrix-scroll-slider::-moz-range-thumb { width:40px; height:10px; border:2px solid #f8faf7; border-radius:12px; background:#64876a; }
+.matrix-scroll-slider:focus, .matrix-scroll-slider:focus-visible, .matrix-scroll-slider:active { outline:none; box-shadow:none; }
+.matrix-scroll-slider:focus-visible::-webkit-slider-thumb { background:#315f3c; }
+.matrix-scroll-slider:focus-visible::-moz-range-thumb { background:#315f3c; }
+.matrix-scroll-content { scrollbar-width:none; }
+.matrix-scroll-content::-webkit-scrollbar { display:none; }

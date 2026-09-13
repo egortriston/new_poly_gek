@@ -105,7 +105,7 @@ export function Oop() {
         </p>
       </div>
       {current?.program &&
-        (current.id === "formation" ? (
+        (["formation", "print"].includes(current.id) ? (
           <label className="document-school">
             Образовательная программа
             <RemoteSelect
@@ -159,8 +159,8 @@ export function Oop() {
         <>
           {current.id === "formation" && selected ? (
             <OopFormation key={selected} programId={selected} />
-          ) : current.id === "print" && program ? (
-            <OopPrint key={program.id_mep} programId={program.id_mep} />
+          ) : current.id === "print" && selected ? (
+            <OopPrint key={selected} programId={selected} />
           ) : current.id === "status" ? (
             <OopStatus />
           ) : current.id === "data" ? (

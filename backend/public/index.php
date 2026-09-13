@@ -14,6 +14,10 @@ require dirname(__DIR__) . '/src/ppa.php';
 require dirname(__DIR__) . '/src/ppa-print.php';
 require dirname(__DIR__) . '/src/oop-status.php';
 require dirname(__DIR__) . '/src/oop.php';
+require dirname(__DIR__) . '/src/oop-general.php';
+require dirname(__DIR__) . '/src/oop-directions.php';
+require dirname(__DIR__) . '/src/oop-print.php';
+require dirname(__DIR__) . '/src/oop-program-data.php';
 ini_set('display_errors', '0');
 $requestId = bin2hex(random_bytes(8));
 header('X-Request-ID: ' . $requestId);
@@ -48,6 +52,28 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
+    if(preg_match('#^/api/v1/oop/directions/([^/]+)/(list|save|delete|options/([0-9]+))$#D',$path,$match)){
+        requireAdmin($user);
+        if($method==='GET'&&isset($match[3]))respond(['data'=>readList(fn()=>oopDirectionOptions($match[1],$match[3],$_GET))]);
+        if($method==='GET'&&$match[2]==='list')respond(['data'=>readList(fn()=>oopDirectionList($match[1],$_GET))]);
+        if($method==='POST'&&in_array($match[2],['save','delete'],true)){
+            requireCsrf();respond(['data'=>oopDirectionMutate($match[1],readJson(),$match[2]==='delete')]);
+        }
+    }
+    if(preg_match('#^/api/v1/oop/general/([^/]+)/(list|save|delete)$#D',$path,$match)){
+        requireAdmin($user);
+        if($method==='GET'&&$match[2]==='list')respond(['data'=>readList(fn()=>oopGeneralList($match[1],$_GET))]);
+        if($method==='POST'&&in_array($match[2],['save','delete'],true)){
+            requireCsrf();respond(['data'=>oopGeneralMutate($match[1],readJson(),$match[2]==='delete')]);
+        }
+    }
+    if($path==='/api/v1/oop/print' && $method==='POST'){requireCsrf();$body=readJson();respond(['data'=>readList(fn()=>['pdf'=>base64_encode(oopPrint($body))])]);}
+    if(preg_match('#^/api/v1/oop/program-data/(matrix|forms)/(list|save|delete)$#D',$path,$match)){
+        if($method==='GET'&&$match[2]==='list')respond(['data'=>readList(fn()=>oopDataList($match[1],$_GET))]);
+        if($method==='POST'&&in_array($match[2],['save','delete'],true)){
+            requireCsrf();respond(['data'=>oopDataMutate($match[1],readJson(),$match[2]==='delete',$user)]);
+        }
+    }
     if ($path==='/api/v1/oop/formation' && $method==='GET') respond(['data'=>readList(fn()=>oopResponse(oopSnapshot(listText($_GET,'program'))))]);
     if ($path==='/api/v1/oop/formation' && $method==='POST') {
         requireCsrf();respond(['data'=>saveOop(readJson(),$user)]);

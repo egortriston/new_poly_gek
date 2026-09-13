@@ -12,6 +12,8 @@ type Option = { value: string; label: string };
 
 export function RemoteSelect({
   source,
+  endpoint,
+  localOptions,
   value,
   onChange,
   placeholder = "Выберите значение",
@@ -20,6 +22,8 @@ export function RemoteSelect({
   "aria-label": label,
 }: {
   source: string;
+  endpoint?: string;
+  localOptions?: Option[];
   value: string;
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   placeholder?: string;
@@ -39,14 +43,28 @@ export function RemoteSelect({
     input = useRef<HTMLInputElement>(null);
   const id = useId();
   const [position, setPosition] = useState({ left: 0, top: 0, width: 300 });
+  const optionPath = endpoint ?? "/options/" + source;
+  const optionQuery = (key: string, text: string) =>
+    optionPath +
+    (optionPath.includes("?") ? "&" : "?") +
+    key +
+    "=" +
+    encodeURIComponent(text);
   const list = useProgressiveList<Option>(
-    "/options/" + source + "?q=" + encodeURIComponent(settled),
+    optionQuery("q", settled),
     "value",
-    open,
+    open && !localOptions,
   );
+  const available = localOptions
+    ? localOptions.filter((option) =>
+        option.label
+          .toLocaleLowerCase("ru")
+          .includes(settled.trim().toLocaleLowerCase("ru")),
+      )
+    : list.items;
   const options = required
-    ? list.items
-    : [{ value: "", label: placeholder }, ...list.items];
+    ? available
+    : [{ value: "", label: placeholder }, ...available];
   const virtual = useVirtualizer({
     count: options.length,
     getScrollElement: () => scroller.current,
@@ -75,6 +93,15 @@ export function RemoteSelect({
     list.more,
   ]);
   useEffect(() => {
+    if (localOptions) {
+      setSelected(
+        localOptions.find((option) => option.value === value) ??
+          (value
+            ? { value, label: "Ранее выбранная запись (ID " + value + ")" }
+            : null),
+      );
+      return;
+    }
     if (!value) {
       setSelected(null);
       return;
@@ -82,7 +109,7 @@ export function RemoteSelect({
     const controller = new AbortController();
     setSelectionError("");
     api<ListPage<Option>>(
-      "/options/" + source + "?id=" + encodeURIComponent(value),
+      optionQuery("id", value),
       undefined,
       controller.signal,
     )
@@ -95,7 +122,7 @@ export function RemoteSelect({
           setSelectionError("Не удалось загрузить выбранное значение");
       });
     return () => controller.abort();
-  }, [source, value]);
+  }, [source, endpoint, value, localOptions]);
   useEffect(() => {
     if (!open) return;
     const rect = trigger.current!.getBoundingClientRect();
@@ -251,7 +278,10 @@ export function RemoteSelect({
                       width: "100%",
                       transform: "translateY(" + item.start + "px)",
                     }}
-                    onPointerMove={() => setActive(item.index)}
+                    onPointerMove={(event) => {
+                      if (event.movementX || event.movementY)
+                        setActive(item.index);
+                    }}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => choose(options[item.index])}
                   >
@@ -276,7 +306,7 @@ export function RemoteSelect({
                   Повторить загрузку
                 </button>
               </div>
-            ) : !list.items.length ? (
+            ) : !available.length ? (
               <div className="app-select-empty">Варианты не найдены</div>
             ) : null}
           </div>,

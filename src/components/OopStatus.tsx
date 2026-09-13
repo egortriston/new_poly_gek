@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, X, ClipboardCheck, Printer } from 'lucide-react';
+import { Search, X, ClipboardCheck, Printer, Pencil } from 'lucide-react';
 import { AppSelect } from './AppSelect';
 import { Empty } from './ui';
 import { type CatalogRow } from '../data/catalog';
@@ -69,7 +69,7 @@ export function OopStatus() {
             <td><strong>{program.name_program}</strong></td>
             <td><span className={`oop-status-badge ${program.status === 'Утверждён' ? 'approved' : 'draft'}`}><span/>{program.status}</span></td>
             <td><div className="button-row">
-              <Link className="text-button" aria-label={`Открыть ООП ${program.id_program}`} to={`/oop/formation?program=${encodeURIComponent(program.id_mep)}`}>Открыть</Link>
+              <Link className="icon-button" title="Открыть ООП" aria-label={`Открыть ООП ${program.id_program}`} to={`/oop/formation?program=${encodeURIComponent(program.id_mep)}`}><Pencil size={16}/></Link>
               <Link className="icon-button" title="Печать ООП" aria-label={`Печать ООП ${program.id_program}`} to={`/oop/print?program=${encodeURIComponent(program.id_mep)}`}><Printer size={16}/></Link>
             </div></td>
           </tr>}/>
