@@ -1,6 +1,7 @@
 export type CatalogKind='schools'|'teachers'|'disciplines'|'directions'|'programs';
 export type CatalogRow=Record<string,string>;
 export type Catalog=Record<CatalogKind,CatalogRow[]>;
+import { clone } from './model';
 export const levels=[{id:'1',name:'Бакалавриат'},{id:'2',name:'Магистратура'},{id:'3',name:'Специалитет'}];
 export const catalogTitles:Record<CatalogKind,string>={schools:'Высшие школы',teachers:'Преподаватели',disciplines:'Дисциплины',directions:'Направления подготовки',programs:'Образовательные программы'};
 export const primaryKeys:Record<CatalogKind,string>={schools:'id_school',teachers:'id_teacher',disciplines:'id_discipline',directions:'id_direction',programs:'id_mep'};
@@ -19,5 +20,5 @@ export const initialCatalog:Catalog={
  directions:[['1','38.03.02','Менеджмент','1'],['2','38.03.01','Экономика','1'],['3','38.03.05','Бизнес-информатика','1'],['4','43.03.01','Сервис','1'],['5','38.04.02','Менеджмент','2']].map(([id_direction,number_direction,name_direction,id_level])=>({id_direction,number_direction,name_direction,id_level})),
  programs:[['1','38.03.02.01','Производственный менеджмент','1'],['2','38.03.02.02','Управление проектами','1'],['3','38.03.01.01','Экономика предприятий и организаций','2'],['4','38.03.01.02','Финансы и инвестиционный анализ','2'],['5','38.03.05.01','Бизнес-информатика','3'],['6','38.03.05.02','Цифровой бизнес','3'],['7','43.03.01.01','Сервис и управление качеством','4'],['8','38.04.02.01','Стратегическое управление','5']].map(([id_mep,id_program,name_program,id_direction])=>({id_mep,id_program,name_program,id_direction,chief_program:'',scient_position:'',staff_position:''})),
 };
-export function readCatalog():Catalog{try{const data=JSON.parse(localStorage.getItem('polytech-catalog-v1')??'null');if(data&&Object.keys(primaryKeys).every(k=>Array.isArray(data[k])&&data[k].every((r:CatalogRow)=>typeof r[primaryKeys[k as CatalogKind]]==='string')))return data;}catch{}return structuredClone(initialCatalog);}
+export function readCatalog():Catalog{try{const data=JSON.parse(localStorage.getItem('polytech-catalog-v1')??'null');if(data&&Object.keys(primaryKeys).every(k=>Array.isArray(data[k])&&data[k].every((r:CatalogRow)=>typeof r[primaryKeys[k as CatalogKind]]==='string')))return data;}catch{}return clone(initialCatalog);}
 export function relationBlock(kind:CatalogKind,id:string,data:Catalog){if(kind==='directions'&&data.programs.some(p=>p.id_direction===id))return 'Сначала перенесите или удалите программы этого направления.';if(kind==='schools'&&(data.teachers.some(t=>t.id_school===id)||data.disciplines.some(d=>d.id_school===id)))return 'Школа используется преподавателями или дисциплинами. Сначала измените их привязку.';return '';}

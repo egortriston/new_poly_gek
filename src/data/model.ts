@@ -22,7 +22,10 @@ export function completeness(c: Commission) {
 }
 export const isReady = (c: Commission) => completeness(c).every(x => x.done);
 export const memberCount = (c: Commission) => new Set([c.chairmanId, c.secretaryId, ...c.internalIds, ...c.externalIds].filter(Boolean)).size;
-export const clone = <T,>(v: T): T => structuredClone(v);
+export const clone = <T,>(v: T): T => {
+ if (typeof globalThis.structuredClone === 'function') return globalThis.structuredClone(v);
+ return JSON.parse(JSON.stringify(v)) as T;
+};
 export function numberError(number: string, year: string, commissions: Commission[], id?: string) {
  if (!number.trim()) return 'Укажите номер комиссии';
  if (!/^\d{1,4}$/.test(number) || Number(number) < 1) return 'Введите номер от 1 до 9999';

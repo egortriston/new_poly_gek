@@ -126,7 +126,7 @@ export function PeopleTable() {
     return (
       <Empty
         title="Таблица не найдена"
-        action={<Link to="/data/people">К таблицам людей</Link>}
+        action={<Link to="/data/people">К участникам ГЭК</Link>}
       />
     );
   const external = category === "external";
@@ -230,10 +230,10 @@ export function PeopleTable() {
   return (
     <div className="page-enter hub-page">
       <Link to="/data/people" className="text-button">
-        Исходные данные / Люди /
+        Исходные данные / Участники ГЭК /
       </Link>
       <div className="hub-welcome">
-        <span className="eyebrow">ТАБЛИЦА · ЛЮДИ</span>
+        <span className="eyebrow">ТАБЛИЦА · УЧАСТНИКИ ГЭК</span>
         <div className="people-title-actions">
           <PageTitle>{titles[category]}</PageTitle>
           <button className="button primary" onClick={() => setAdding(true)}>

@@ -34,12 +34,12 @@ export const sectionDestinations: SectionDestination[] = [
   { title: 'Список комиссий', path: '/commissions', group: 'ГЭК', keywords: 'состав члены формирование гэк' },
   { title: 'Формирование и печать', path: '/gek/documents', group: 'ГЭК', keywords: 'документы шаблоны распечатать приказ выгрузка' },
   { title: 'Исходные данные', path: '/data', group: 'Основные разделы', keywords: 'таблицы справочники' },
-  { title: 'Люди', path: '/data/people', group: 'Исходные данные', keywords: 'участники персонал' },
-  { title: 'Преподаватели', path: '/data/catalog/teachers', group: 'Исходные данные · Люди', keywords: 'сотрудники педагог ппс внутренние' },
-  { title: 'Внешние члены ГЭК', path: '/data/people/external', group: 'Исходные данные · Люди', keywords: 'внешние участники работодатели представители организаций' },
-  { title: 'Председатели ГЭК', path: '/data/people/chairmen', group: 'Исходные данные · Люди', keywords: 'председатель карточка образование бизнес' },
-  { title: 'Председатели комплексных ГЭК', path: '/data/people/complex', group: 'Исходные данные · Люди', keywords: 'комплексная комплексный председатель карточка' },
-  { title: 'Структура университета', path: '/data/structure', group: 'Исходные данные', keywords: 'подразделения' },
+  { title: 'Участники ГЭК', path: '/data/people', group: 'Исходные данные', keywords: 'люди участники персонал председатели внешние' },
+  { title: 'Преподаватели', path: '/data/catalog/teachers', group: 'Исходные данные · Структура', keywords: 'сотрудники педагог ппс внутренние' },
+  { title: 'Внешние члены ГЭК', path: '/data/people/external', group: 'Исходные данные · Участники ГЭК', keywords: 'внешние участники работодатели представители организаций' },
+  { title: 'Председатели ГЭК', path: '/data/people/chairmen', group: 'Исходные данные · Участники ГЭК', keywords: 'председатель карточка образование бизнес' },
+  { title: 'Председатели комплексных ГЭК', path: '/data/people/complex', group: 'Исходные данные · Участники ГЭК', keywords: 'комплексная комплексный председатель карточка' },
+  { title: 'Структура университета', path: '/data/structure', group: 'Исходные данные', keywords: 'подразделения преподаватели школы' },
   { title: 'Высшие школы', path: '/data/catalog/schools', group: 'Исходные данные · Структура', keywords: 'школа вш директора директор руководитель и.о.' },
   { title: 'Образование', path: '/data/education', group: 'Исходные данные', keywords: 'учебные справочники' },
   { title: 'Направления подготовки', path: '/data/catalog/directions', group: 'Исходные данные · Образование', keywords: 'направление код специальности' },
@@ -51,7 +51,7 @@ export const sectionDestinations: SectionDestination[] = [
 const normalize = (value: string) => value.toLocaleLowerCase('ru').replaceAll('ё', 'е').trim();
 export function findSections(query: string) {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
-  if (!terms.length) return sectionDestinations.filter(item => ['/commissions', '/data/people', '/data', '/archive'].includes(item.path));
+  if (!terms.length) return sectionDestinations.filter(item => ['/commissions', '/data/people', '/data/structure', '/data', '/archive'].includes(item.path));
   return sectionDestinations
     .filter(item => terms.every(term => normalize(`${item.title} ${item.group} ${item.keywords}`).includes(term)))
     .sort((a, b) => Number(normalize(b.title).includes(normalize(query))) - Number(normalize(a.title).includes(normalize(query))))

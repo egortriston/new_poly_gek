@@ -22,6 +22,7 @@ import { useDebounced, useProgressiveList } from "../data/useProgressiveList";
 import { Confirm, Empty, Field, Modal } from "../components/ui";
 import { oopTables } from "../data/oopForm";
 import { useStore } from "../store";
+import { clone } from "../data/model";
 
 const base = "/oop/data/general";
 export const generalSections = [
@@ -168,7 +169,7 @@ function GeneralTable({
     setFresh(!row);
     setEdit(
       row
-        ? structuredClone(row)
+        ? clone(row)
         : {
             id: "",
             version: "",

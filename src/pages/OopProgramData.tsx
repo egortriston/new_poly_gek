@@ -19,6 +19,7 @@ import { ProgressiveRows } from "../components/ProgressiveRows";
 import { useDebounced, useProgressiveList } from "../data/useProgressiveList";
 import { oopTables } from "../data/oopForm";
 import { useStore } from "../store";
+import { clone } from "../data/model";
 
 const base = "/oop/data/programs";
 
@@ -151,7 +152,7 @@ function ProgramTable({ kind }: { kind: string }) {
     setError("");
     setEdit(
       row
-        ? structuredClone(row)
+        ? clone(row)
         : {
             id: "",
             programId: filter,

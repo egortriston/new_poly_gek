@@ -13,6 +13,7 @@ import { AttestationDocuments } from '../components/AttestationDocuments';
 import { readCatalog } from '../data/catalog';
 import { isAttestationFilled, attestationTypes, readAttestations, saveAttestations, fixedChairman, type AttestationKind, type AttestationRecord } from '../data/attestation';
 import { useStore } from '../store';
+import { makeClientId } from '../utils/id';
 
 export function AttestationHub() {
   return <div className="page-enter hub-page"><div className="hub-welcome"><PageTitle>Формирование аттестационных комиссий</PageTitle><p>Выберите тип комиссии для заполнения состава и подготовки документов.</p></div><div className="people-hub-grid">{Object.entries(attestationTypes).map(([kind, info]) => <Link key={kind} to={`/attestation/${kind}`} className="module-card available"><span className="module-icon">{kind==='spo'?<GraduationCap size={25}/>:kind==='ac'?<ClipboardCheck size={25}/>:<ClipboardClock size={25}/>}</span><h2>{info.title}</h2><p>{info.description}</p><footer>Открыть раздел <ArrowUpRight size={17} /></footer></Link>)}</div><Link to="/data" className="hub-related">Исходные данные · преподаватели, школы, направления и программы <ArrowUpRight size={16} /></Link></div>;
@@ -43,7 +44,7 @@ function AttestationContent() {
       <Link className="module-card available" to={'/attestation/' + kind + '/commissions'}><Layers3 size={25}/><h2>Список комиссий</h2><p>Составы, направления подготовки и образовательные программы.</p><footer>Открыть комиссии <ArrowUpRight size={18}/></footer></Link>
       <Link className="module-card available" to={'/attestation/' + kind + '/documents'}><Printer size={25}/><h2>Формирование и печать</h2><p>{kind === 'ppa' ? 'Распоряжение, изменения и дополнения к нему. Заполнение титульных листов и печать.' : 'Служебные записки, распоряжения и титульные листы.'}</p><footer>Выбрать документ <ArrowUpRight size={18}/></footer></Link>
     </div>
-    <Link className="hub-related" to="/data/people"><span>Справочники участников образовательного процесса</span><strong>Перейти к таблицам</strong><ArrowUpRight size={16}/></Link>
+    <Link className="hub-related" to="/data/people"><span>Участники ГЭК</span><strong>Перейти к таблицам</strong><ArrowUpRight size={16}/></Link>
   </div>;
 }
 function CommissionTable({ kind, view }: { kind: AttestationKind; view: string }) {
@@ -78,7 +79,7 @@ function CommissionTable({ kind, view }: { kind: AttestationKind; view: string }
   async function create() {
    try {
     if (!c.schools.some(s => s.id_school === newSchool) || !/^\d+$/.test(number.trim())) { setError('Выберите высшую школу и укажите номер цифрами'); return; }
-    const record: AttestationRecord = { id: crypto.randomUUID(), kind, number: number.trim(), school: newSchool, amendment, chairman: kind === 'ppa' ? '' : '25011', secretary: '', members: [], directions: [], programs: [], disciplines: [] };
+    const record: AttestationRecord = { id: makeClientId(), kind, number: number.trim(), school: newSchool, amendment, chairman: kind === 'ppa' ? '' : '25011', secretary: '', members: [], directions: [], programs: [], disciplines: [] };
     const saved=await save(record);
     if (!saved) { setError('Не удалось сохранить комиссию. Проверьте уникальность номера.'); return; }
     setCreating(false); setEdit(saved);

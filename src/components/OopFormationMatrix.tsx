@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { AppSelect } from "./AppSelect";
 import { Field, Modal } from "./ui";
 import { oopTables, type OopRow } from "../data/oopForm";
+import { makeClientId } from "../utils/id";
+import { clone } from "../data/model";
 
 export type FormationRow = OopRow & {
   shared?: boolean;
@@ -48,7 +50,7 @@ export function OopFormationMatrix({
             className="button small secondary"
             onClick={() =>
               setEdit({
-                id: "new-" + crypto.randomUUID(),
+                id: makeClientId("new-"),
                 values: schema.columns.map(() => ""),
                 task: "",
                 object: "",
@@ -120,7 +122,7 @@ export function OopFormationMatrix({
                               type="button"
                               className="icon-button"
                               aria-label={"Изменить запись " + row.values[0]}
-                              onClick={() => setEdit(structuredClone(row))}
+                              onClick={() => setEdit(clone(row))}
                             >
                               <Pencil size={15} />
                             </button>

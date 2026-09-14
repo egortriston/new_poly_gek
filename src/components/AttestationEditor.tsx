@@ -8,6 +8,7 @@ import { AppSelect } from './AppSelect';
 import { Avatar, Breadcrumb, Confirm, Field, Modal } from './ui';
 import { readCatalog } from '../data/catalog';
 import { fixedChairman, type AttestationRecord } from '../data/attestation';
+import { clone } from '../data/model';
 
 type GroupKey = 'members' | 'directions' | 'programs' | 'disciplines';
 type Option = { id: string; label: string; description?: string };
@@ -20,7 +21,7 @@ function Selection({ title, options, values, onApply, onClose }: { title: string
 }
 
 export function AttestationEditor({ record, onSave, onClose }: { record: AttestationRecord; onSave: (record: AttestationRecord) => boolean | AttestationRecord | Promise<AttestationRecord | false>; onClose: () => void }) {
-  const [draft, setDraft] = useState(() => structuredClone(record));
+  const [draft, setDraft] = useState(() => clone(record));
   const baseline = useRef(JSON.stringify(record));
   const dirty = baseline.current !== JSON.stringify(draft);
   const [error, setError] = useState('');
@@ -46,7 +47,7 @@ export function AttestationEditor({ record, onSave, onClose }: { record: Attesta
       const result=await onSave({...draft,number:draft.number.trim()});
       if(!result)throw new Error('Не удалось сохранить запись. Проверьте уникальность номера.');
       const saved=typeof result==='object'?result:draft;
-      baseline.current=JSON.stringify(saved);setDraft(structuredClone(saved));
+      baseline.current=JSON.stringify(saved);setDraft(clone(saved));
     }catch(reason){setError((reason as Error).message);}finally{setSaving(false);}
   }
   const options: Record<GroupKey, Option[]> = {

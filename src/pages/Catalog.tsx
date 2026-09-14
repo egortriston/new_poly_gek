@@ -12,6 +12,7 @@ import {
   GraduationCap,
   NotebookPen,
   RefreshCw,
+  UsersRound,
 } from "lucide-react";
 import { RemoteSelect } from "../components/RemoteSelect";
 import { ProgressiveRows } from "../components/ProgressiveRows";
@@ -28,12 +29,17 @@ import {
 const groups = {
   structure: {
     title: "Структура университета",
-    description: "Высшие школы и сведения об их руководителях.",
+    description: "Высшие школы, руководители и преподаватели.",
     items: [
       [
         "schools",
         "Высшие школы",
         "Название, сокращение, директор и его должность.",
+      ],
+      [
+        "teachers",
+        "Преподаватели",
+        "Высшая школа, должность, учёная степень и звание.",
       ],
     ],
   },
@@ -82,6 +88,8 @@ export function CatalogHub({ group }: { group: "structure" | "education" }) {
             <span className="module-icon">
               {key === "schools" ? (
                 <Building2 size={24} />
+              ) : key === "teachers" ? (
+                <UsersRound size={24} />
               ) : key === "directions" ? (
                 <GraduationCap size={24} />
               ) : key === "programs" ? (
@@ -216,7 +224,7 @@ function Table({ kind }: { kind: CatalogKind }) {
   };
   const back =
     kind === "teachers"
-      ? "/data/people"
+      ? "/data/structure"
       : kind === "schools"
         ? "/data/structure"
         : "/data/education";
@@ -235,7 +243,7 @@ function Table({ kind }: { kind: CatalogKind }) {
       <Link className="text-button" to={back}>
         Исходные данные /{" "}
         {kind === "teachers"
-          ? "Люди"
+          ? "Структура университета"
           : kind === "schools"
             ? "Структура университета"
             : "Образование"}{" "}
