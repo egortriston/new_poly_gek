@@ -340,3 +340,6 @@
 
 .related-card{margin-top:20px;min-height:210px}.related-card .module-top{margin-bottom:18px}
 
+
+.chairman-scope-checks{max-height:245px;overflow:auto;border:1px solid #e1e7db;border-radius:8px;padding:12px;background:#fff}.chairman-scope-checks label{align-items:flex-start;line-height:1.45}.chairman-scope-checks input{margin-top:3px}.chairman-scope-checks input:disabled+*{opacity:.55}
+

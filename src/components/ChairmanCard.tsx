@@ -22,6 +22,8 @@ export function ChairmanCard({
   person,
   complex,
   schools,
+  directions,
+  programs,
   onChange,
   onArchive,
   onPrint,
@@ -32,6 +34,8 @@ export function ChairmanCard({
   person: Person & { missing?: boolean };
   complex: boolean;
   schools: { id: string; name: string }[];
+  directions: { id_direction: string; number_direction: string; name_direction: string }[];
+  programs: { id_mep: string; id_program: string; name_program: string; id_direction: string }[];
   onChange: (entry: Entry) => void;
   onArchive: () => Promise<void>;
   onPrint: () => void;
@@ -128,6 +132,36 @@ export function ChairmanCard({
           ["career_activity", "Род профессиональной деятельности кандидата"],
           ["candidate_is", "Кандидат является"],
         ];
+  const directionIds = entry.directionIds ?? [];
+  const programIds = entry.programIds ?? [];
+  const selectedPrograms = programs.filter((program) =>
+    programIds.includes(program.id_mep),
+  );
+  const availablePrograms = programs.filter(
+    (program) =>
+      !directionIds.length || directionIds.includes(program.id_direction),
+  );
+  const toggleDirection = (id: string, checked: boolean) => {
+    const next = checked
+      ? [...directionIds, id].slice(0, 4)
+      : directionIds.filter((value) => value !== id);
+    onChange({
+      ...entry,
+      directionIds: next,
+      programIds: programIds.filter((programId) => {
+        const program = programs.find((item) => item.id_mep === programId);
+        return !program || !next.length || next.includes(program.id_direction);
+      }),
+    });
+  };
+  const toggleProgram = (id: string, checked: boolean) => {
+    onChange({
+      ...entry,
+      programIds: checked
+        ? [...programIds, id]
+        : programIds.filter((value) => value !== id),
+    });
+  };
   return (
     <div className="page-enter detail-page chairman-card">
       <div className="breadcrumb">
@@ -227,6 +261,58 @@ export function ChairmanCard({
               ),
             )}
             {section(
+              "Направления и ООП",
+              "Сведения для согласования списка председателей",
+              <BookOpen size={18} />,
+              <>
+                <Field label={`Направления подготовки (${directionIds.length} из 4)`}>
+                  <div className="school-checks chairman-scope-checks">
+                    {directions.map((direction) => (
+                      <label key={direction.id_direction}>
+                        <input
+                          type="checkbox"
+                          checked={directionIds.includes(direction.id_direction)}
+                          disabled={
+                            !directionIds.includes(direction.id_direction) &&
+                            directionIds.length >= 4
+                          }
+                          onChange={(event) =>
+                            toggleDirection(
+                              direction.id_direction,
+                              event.target.checked,
+                            )
+                          }
+                        />
+                        {direction.number_direction} {direction.name_direction}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                <Field label={`Код и наименование ООП (${programIds.length})`}>
+                  <div className="school-checks chairman-scope-checks">
+                    {availablePrograms.map((program) => (
+                      <label key={program.id_mep}>
+                        <input
+                          type="checkbox"
+                          checked={programIds.includes(program.id_mep)}
+                          onChange={(event) =>
+                            toggleProgram(program.id_mep, event.target.checked)
+                          }
+                        />
+                        {program.id_program} {program.name_program}
+                      </label>
+                    ))}
+                    {!availablePrograms.length && (
+                      <p className="field-hint">
+                        Выберите направление, чтобы увидеть образовательные
+                        программы.
+                      </p>
+                    )}
+                  </div>
+                </Field>
+              </>,
+            )}
+            {section(
               "Образование",
               "Сведения в соответствии с документом об образовании",
               <GraduationCap size={19} />,
@@ -305,7 +391,7 @@ export function ChairmanCard({
                 : "Вид деятельности, профессиональные обязанности и сведения о кандидате."}
             </p>
           </div>
-          <div className="detail-summary">
+              <div className="detail-summary">
             <h3>Сведения из справочника</h3>
             <dl>
               <div>
@@ -319,6 +405,14 @@ export function ChairmanCard({
               <div>
                 <dt>Место работы</dt>
                 <dd>{person.organization}</dd>
+              </div>
+              <div>
+                <dt>Направления</dt>
+                <dd>{directionIds.length || "Не выбраны"}</dd>
+              </div>
+              <div>
+                <dt>ООП</dt>
+                <dd>{selectedPrograms.length || "Не выбраны"}</dd>
               </div>
             </dl>
           </div>

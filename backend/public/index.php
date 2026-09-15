@@ -148,7 +148,11 @@ try {
     if($method==='GET' && preg_match('#^/api/v1/options/([a-z]+)$#',$path,$matches))
         respond(['data'=>readList(fn()=>optionList($matches[1],$_GET))]);
     if($path==='/api/v1/catalog/context' && $method==='GET')
-        respond(['data'=>['schools'=>rows('SELECT id_school, name_school FROM school ORDER BY id_school')]]);
+        respond(['data'=>[
+            'schools'=>rows('SELECT id_school, name_school FROM school ORDER BY id_school'),
+            'directions'=>rows('SELECT id_direction::text AS id_direction, number_direction, name_direction FROM direction_list ORDER BY number_direction,id_direction'),
+            'programs'=>rows('SELECT id_mep::text AS id_mep, id_program, name_program, id_direction::text AS id_direction FROM program_list ORDER BY id_program,id_mep'),
+        ]]);
     if($path==='/api/v1/catalog'&&$method==='GET')respond(['data'=>transaction(fn()=>catalogSnapshot())]);
     if($path==='/api/v1/people'&&$method==='GET')respond(['data'=>transaction(fn()=>peopleSnapshot())]);
     if(preg_match('#^/api/v1/people/([a-z]+)/archive$#',$path,$matches)&&$method==='POST'){

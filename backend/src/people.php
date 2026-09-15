@@ -17,7 +17,8 @@ function chairState(array $row): array
 {
     $complex=$row['complex']==='t';
     $schools=$complex?rows('SELECT id_school FROM sec_complex_sc WHERE id_predsedatel_sc=$1 ORDER BY id_school',[$row['id_predsedatel_sc']]):rows('SELECT id_school FROM sec_helper WHERE chairman=$1 ORDER BY id_school',[$row['sm_id']]);
-    return ['record'=>$row,'schools'=>array_column($schools,'id_school')];
+    $programs=rows('SELECT p.id_mep::text AS id_mep, p.id_direction::text AS id_direction FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1 ORDER BY p.id_program,p.id_mep',[$row['id_predsedatel_sc']]);
+    return ['record'=>$row,'schools'=>array_column($schools,'id_school'),'programs'=>array_column($programs,'id_mep'),'directions'=>array_values(array_unique(array_column($programs,'id_direction')))];
 }
 function peopleSnapshot(): array
 {
@@ -33,7 +34,7 @@ function peopleSnapshot(): array
             $people[]=['id'=>'member:'.$row['sm_id'],'name'=>'Участник не найден','organization'=>'Нарушена связь в исходных данных','position'=>'','degree'=>'','rank'=>'','kind'=>'external','color'=>'sage','initials'=>'?','missing'=>true];
         }
         $state=chairState($row);$values=[];foreach(CHAIR_FIELDS as $key=>$column)$values[$key]=$row[$column]??'';
-        $entry=['id'=>(string)$row['id_predsedatel_sc'],'personId'=>'member:'.$row['sm_id'],'sphere'=>$row['area']??'','schoolIds'=>$state['schools'],'values'=>$values,'version'=>version($state)];
+        $entry=['id'=>(string)$row['id_predsedatel_sc'],'personId'=>'member:'.$row['sm_id'],'sphere'=>$row['area']??'','schoolIds'=>$state['schools'],'programIds'=>$state['programs'],'directionIds'=>$state['directions'],'values'=>$values,'version'=>version($state)];
         if($row['complex']==='t')$complex[]=$entry;else $chairmen[]=$entry;
     }
     return ['people'=>$people,'entries'=>['external'=>$external,'chairmen'=>$chairmen,'complex'=>$complex]];
@@ -77,8 +78,22 @@ function savePeople(string $category,array $body): array
         if(!$old && pg_num_rows(query('SELECT 1 FROM sec_predsedatel_s WHERE sm_id=$1',[$smId])))throw new ApiError(409,'DUPLICATE','Карточка этого председателя уже существует.');
         $values=['sm_id'=>$smId,'area'=>$sphere,'complex'=>$category==='complex'?'t':'f'];
         $fields=$body['values']??[];if(!is_array($fields))throw new ApiError(422,'VALIDATION','Неверные поля карточки.');
+        $programs=$body['programIds']??[];
+        if(!is_array($programs)||count($programs)>300||count($programs)!==count(array_unique($programs)))throw new ApiError(422,'VALIDATION','Некорректный список образовательных программ.');
+        $directions=$body['directionIds']??[];
+        if(!is_array($directions)||count($directions)>4||count($directions)!==count(array_unique($directions)))throw new ApiError(422,'VALIDATION','У председателя может быть не более четырёх направлений.');
+        foreach($directions as $direction){if(!is_string($direction))throw new ApiError(422,'VALIDATION','Неверное направление.');referenceExists('direction_list','id_direction',$direction);}
+        $programCodes=[];
+        foreach($programs as $program){
+            if(!is_string($program))throw new ApiError(422,'VALIDATION','Неверная образовательная программа.');
+            $programRow=rows('SELECT id_program,id_direction FROM program_list WHERE id_mep=$1',[$program])[0]??throw new ApiError(422,'INVALID_REFERENCE','Образовательная программа не найдена.');
+            if($directions && !in_array((string)$programRow['id_direction'],$directions,true))throw new ApiError(422,'PROGRAM_DIRECTION','Выбранная ООП относится к направлению, которое не указано в карточке председателя.');
+            $programCodes[]=(string)$programRow['id_program'];
+        }
         foreach(CHAIR_FIELDS as $key=>$column){if(array_key_exists($key,$fields))$values[$column]=requiredText($fields,$key);}
         if($old)updateRecord('sec_predsedatel_s','id_predsedatel_sc',$id,$values);else $id=insertRecord('sec_predsedatel_s',$values,'id_predsedatel_sc');
+        query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
+        foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);
         if($category==='complex'){
             if(!$old)insertRecord('sec_complex',['chairman'=>$smId],'id_complex');
             query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);

@@ -122,6 +122,19 @@ function saveGek(array $body): array
         if(($secretary && in_array($secretary,$links['internalIds'],true)) || ($chairman && in_array($chairman,$links['externalIds'],true))) {
             throw new ApiError(422,'VALIDATION','Председателя и секретаря не нужно повторно добавлять в состав комиссии.');
         }
+        $chairProfile=rows('SELECT id_predsedatel_sc FROM sec_predsedatel_s WHERE sm_id=$1',[$chairman])[0]??null;
+        if($chairProfile){
+            $allowed=rows('SELECT p.id_mep::text AS id_mep, p.id_direction::text AS id_direction FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1',[$chairProfile['id_predsedatel_sc']]);
+            if($allowed){
+                $allowedDirections=array_values(array_unique(array_column($allowed,'id_direction')));
+                $allowedPrograms=array_column($allowed,'id_mep');
+                foreach($links['programIds'] as $programId){
+                    $program=rows('SELECT id_direction::text AS id_direction FROM program_list WHERE id_mep=$1',[$programId])[0]??null;
+                    if(!$program||(!in_array($programId,$allowedPrograms,true)&&!in_array((string)$program['id_direction'],$allowedDirections,true)))
+                        throw new ApiError(422,'CHAIRMAN_SCOPE','Выбранная программа не входит в направления, закреплённые за председателем.');
+                }
+            }
+        }
         $values=['id_com_sec'=>$number,'id_school'=>$school,'chairman'=>$chairman,'secretary'=>$secretary];
         if($id) updateRecord('sec','id_sec',$id,$values); else $id=insertRecord('sec',$values,'id_sec');
         foreach(GEK_LINKS as $key=>[$table,$column]) {

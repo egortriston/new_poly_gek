@@ -26,6 +26,8 @@ export type Entry = {
   personId: string;
   sphere: "Образование" | "Бизнес";
   schoolIds: string[];
+  directionIds?: string[];
+  programIds?: string[];
   values: Record<string, string>;
 };
 const titles: Record<string, string> = {
@@ -55,6 +57,8 @@ export function PeopleTable() {
   const source = useProgressiveList<Entry>(listPath, "id");
   const catalog = useServerData<{
     schools: { id_school: string; name_school: string }[];
+    directions: { id_direction: string; number_direction: string; name_direction: string }[];
+    programs: { id_mep: string; id_program: string; name_program: string; id_direction: string }[];
   }>("/catalog/context");
   const [busy, setBusy] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
@@ -62,6 +66,8 @@ export function PeopleTable() {
     id: s.id_school,
     name: s.name_school,
   }));
+  const directions = catalog.data?.directions ?? [];
+  const programs = catalog.data?.programs ?? [];
   const schoolName = (id: string) =>
     schools.find((s) => s.id === id)?.name ?? "—";
   const reload = async () => {
@@ -218,6 +224,8 @@ export function PeopleTable() {
         person={person}
         complex={category === "complex"}
         schools={schools}
+        directions={directions}
+        programs={programs}
         onChange={setEntry}
         onArchive={() => archiveEntry()}
         onPrint={() => setPrinting(entry)}
