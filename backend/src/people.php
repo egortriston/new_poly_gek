@@ -80,14 +80,12 @@ function savePeople(string $category,array $body): array
         $fields=$body['values']??[];if(!is_array($fields))throw new ApiError(422,'VALIDATION','Неверные поля карточки.');
         $programs=$body['programIds']??[];
         if(!is_array($programs)||count($programs)>300||count($programs)!==count(array_unique($programs)))throw new ApiError(422,'VALIDATION','Некорректный список образовательных программ.');
-        $directions=$body['directionIds']??[];
-        if(!is_array($directions)||count($directions)>4||count($directions)!==count(array_unique($directions)))throw new ApiError(422,'VALIDATION','У председателя может быть не более четырёх направлений.');
-        foreach($directions as $direction){if(!is_string($direction))throw new ApiError(422,'VALIDATION','Неверное направление.');referenceExists('direction_list','id_direction',$direction);}
+        $directions=[];
         $programCodes=[];
         foreach($programs as $program){
             if(!is_string($program))throw new ApiError(422,'VALIDATION','Неверная образовательная программа.');
             $programRow=rows('SELECT id_program,id_direction FROM program_list WHERE id_mep=$1',[$program])[0]??throw new ApiError(422,'INVALID_REFERENCE','Образовательная программа не найдена.');
-            if($directions && !in_array((string)$programRow['id_direction'],$directions,true))throw new ApiError(422,'PROGRAM_DIRECTION','Выбранная ООП относится к направлению, которое не указано в карточке председателя.');
+            $directions[]=(string)$programRow['id_direction'];
             $programCodes[]=(string)$programRow['id_program'];
         }
         foreach(CHAIR_FIELDS as $key=>$column){if(array_key_exists($key,$fields))$values[$column]=requiredText($fields,$key);}

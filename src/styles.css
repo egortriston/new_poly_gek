@@ -342,4 +342,5 @@
 
 
 .chairman-scope-checks{max-height:245px;overflow:auto;border:1px solid #e1e7db;border-radius:8px;padding:12px;background:#fff}.chairman-scope-checks label{align-items:flex-start;line-height:1.45}.chairman-scope-checks input{margin-top:3px}.chairman-scope-checks input:disabled+*{opacity:.55}
+.chairman-program-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.chairman-program-header strong{display:block;font-size:12px;color:#5d724f;font-weight:550}.chairman-program-header span{display:block;margin-top:4px;font-size:10px;color:#94a386}
 

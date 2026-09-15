@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { Entry } from "../pages/PeopleTable";
 import { type Person } from "../data/model";
-import { Avatar, Confirm, Field, SectionHeading } from "./ui";
+import { Avatar, Confirm, Empty, Field, Picker, SectionHeading } from "./ui";
 export function ChairmanCard({
   entry,
   person,
@@ -62,6 +62,7 @@ export function ChairmanCard({
   }, [dirty]);
   const [busy, setBusy] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [programPicker, setProgramPicker] = useState(false);
   const [error, setError] = useState("");
   const save = async () => {
     if (busy) return;
@@ -132,35 +133,43 @@ export function ChairmanCard({
           ["career_activity", "Род профессиональной деятельности кандидата"],
           ["candidate_is", "Кандидат является"],
         ];
-  const directionIds = entry.directionIds ?? [];
   const programIds = entry.programIds ?? [];
   const selectedPrograms = programs.filter((program) =>
     programIds.includes(program.id_mep),
   );
-  const availablePrograms = programs.filter(
-    (program) =>
-      !directionIds.length || directionIds.includes(program.id_direction),
+  const selectedDirectionIds = Array.from(
+    new Set(selectedPrograms.map((program) => program.id_direction)),
   );
-  const toggleDirection = (id: string, checked: boolean) => {
-    const next = checked
-      ? [...directionIds, id].slice(0, 4)
-      : directionIds.filter((value) => value !== id);
+  const selectedDirections = directions.filter((direction) =>
+    selectedDirectionIds.includes(direction.id_direction),
+  );
+  const pickerPrograms = programs.map((program) => ({
+    id: program.id_mep,
+    code: program.id_program,
+    name: program.name_program,
+    level: directions.find(
+      (direction) => direction.id_direction === program.id_direction,
+    )
+      ? [
+          directions.find(
+            (direction) => direction.id_direction === program.id_direction,
+          )?.number_direction,
+          directions.find(
+            (direction) => direction.id_direction === program.id_direction,
+          )?.name_direction,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "Направление не указано",
+    school: entry.schoolIds[0] ?? "",
+  }));
+  const applyPrograms = (ids: string[]) => {
     onChange({
       ...entry,
-      directionIds: next,
-      programIds: programIds.filter((programId) => {
-        const program = programs.find((item) => item.id_mep === programId);
-        return !program || !next.length || next.includes(program.id_direction);
-      }),
+      directionIds: undefined,
+      programIds: ids,
     });
-  };
-  const toggleProgram = (id: string, checked: boolean) => {
-    onChange({
-      ...entry,
-      programIds: checked
-        ? [...programIds, id]
-        : programIds.filter((value) => value !== id),
-    });
+    setProgramPicker(false);
   };
   return (
     <div className="page-enter detail-page chairman-card">
@@ -261,55 +270,90 @@ export function ChairmanCard({
               ),
             )}
             {section(
-              "Направления и ООП",
+              "Образовательные программы",
               "Сведения для согласования списка председателей",
               <BookOpen size={18} />,
               <>
-                <Field label={`Направления подготовки (${directionIds.length} из 4)`}>
-                  <div className="school-checks chairman-scope-checks">
-                    {directions.map((direction) => (
-                      <label key={direction.id_direction}>
-                        <input
-                          type="checkbox"
-                          checked={directionIds.includes(direction.id_direction)}
-                          disabled={
-                            !directionIds.includes(direction.id_direction) &&
-                            directionIds.length >= 4
-                          }
-                          onChange={(event) =>
-                            toggleDirection(
-                              direction.id_direction,
-                              event.target.checked,
-                            )
-                          }
-                        />
-                        {direction.number_direction} {direction.name_direction}
-                      </label>
-                    ))}
+                <div className="chairman-program-header">
+                  <div>
+                    <strong>Код и наименование ООП</strong>
+                    <span>Выбрано программ: {programIds.length}</span>
                   </div>
-                </Field>
-                <Field label={`Код и наименование ООП (${programIds.length})`}>
-                  <div className="school-checks chairman-scope-checks">
-                    {availablePrograms.map((program) => (
-                      <label key={program.id_mep}>
-                        <input
-                          type="checkbox"
-                          checked={programIds.includes(program.id_mep)}
-                          onChange={(event) =>
-                            toggleProgram(program.id_mep, event.target.checked)
-                          }
-                        />
-                        {program.id_program} {program.name_program}
-                      </label>
-                    ))}
-                    {!availablePrograms.length && (
-                      <p className="field-hint">
-                        Выберите направление, чтобы увидеть образовательные
-                        программы.
-                      </p>
-                    )}
+                  <button
+                    className="button secondary"
+                    type="button"
+                    onClick={() => setProgramPicker(true)}
+                  >
+                    Добавить
+                  </button>
+                </div>
+                {selectedPrograms.length ? (
+                  <div className="program-list">
+                    {selectedPrograms.map((program) => {
+                      const direction = directions.find(
+                        (item) => item.id_direction === program.id_direction,
+                      );
+                      return (
+                        <article className="program-card" key={program.id_mep}>
+                          <span className="program-icon">
+                            <BookOpen size={22} />
+                          </span>
+                          <div>
+                            <div>
+                              <span className="code-label">
+                                {program.id_program}
+                              </span>
+                              {direction && (
+                                <span className="subtle-pill">
+                                  {direction.number_direction}
+                                </span>
+                              )}
+                            </div>
+                            <h3>{program.name_program}</h3>
+                            <p>
+                              {direction
+                                ? direction.name_direction
+                                : "Направление не указано"}
+                            </p>
+                          </div>
+                          <button
+                            className="icon-button"
+                            type="button"
+                            aria-label={`Убрать программу ${program.name_program}`}
+                            onClick={() =>
+                              applyPrograms(
+                                programIds.filter(
+                                  (value) => value !== program.id_mep,
+                                ),
+                              )
+                            }
+                          >
+                            ×
+                          </button>
+                        </article>
+                      );
+                    })}
                   </div>
-                </Field>
+                ) : (
+                  <Empty
+                    title="Программы пока не добавлены"
+                    action={
+                      <button
+                        className="button primary"
+                        type="button"
+                        onClick={() => setProgramPicker(true)}
+                      >
+                        Выбрать ООП
+                      </button>
+                    }
+                  >
+                    Выберите одну или несколько ООП из справочника.
+                  </Empty>
+                )}
+                <p className="field-hint">
+                  Направления для списка председателей определяются по выбранным
+                  ООП. Сейчас выбрано направлений: {selectedDirectionIds.length}.
+                </p>
               </>,
             )}
             {section(
@@ -408,7 +452,7 @@ export function ChairmanCard({
               </div>
               <div>
                 <dt>Направления</dt>
-                <dd>{directionIds.length || "Не выбраны"}</dd>
+                <dd>{selectedDirections.length || "Не выбраны"}</dd>
               </div>
               <div>
                 <dt>ООП</dt>
@@ -463,6 +507,17 @@ export function ChairmanCard({
         >
           Можно остаться и сохранить карточку или уйти без сохранения изменений.
         </Confirm>
+      )}
+      {programPicker && (
+        <Picker
+          progressive
+          title="Образовательные программы"
+          programs={pickerPrograms}
+          multiple
+          selected={programIds}
+          onApply={applyPrograms}
+          onClose={() => setProgramPicker(false)}
+        />
       )}
     </div>
   );
