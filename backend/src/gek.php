@@ -65,7 +65,12 @@ function gekCommission(array $state): array
 function gekSnapshot(string $period='2026/2027'): array
 {
     $schools=rows('SELECT id_school AS id, name_school AS name, short FROM school ORDER BY id_school');
-    $people=array_map('personFromMember', rows('SELECT * FROM sec_member ORDER BY sm_name, sm_id'));
+    $people=array_map(function($member){
+        $person=personFromMember($member);
+        $profile=rows('SELECT id_predsedatel_sc FROM sec_predsedatel_s WHERE sm_id=$1',[$member['sm_id']])[0]??null;
+        if($profile)$person['chairmanProgramIds']=array_column(rows('SELECT p.id_mep::text AS id_mep FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1 ORDER BY p.id_program,p.id_mep',[$profile['id_predsedatel_sc']]),'id_mep');
+        return $person;
+    }, rows('SELECT * FROM sec_member ORDER BY sm_name, sm_id'));
     foreach(rows('SELECT t.*, s.name_school FROM teacher t LEFT JOIN school s ON s.id_school=t.id_school ORDER BY name_teacher,id_teacher') as $t) {
         $people[]=['id'=>'teacher:'.$t['id_teacher'], 'name'=>$t['name_teacher']??'', 'organization'=>$t['name_school']??'',
             'position'=>$t['position_teacher']??'', 'degree'=>$t['academic_degree']??'', 'rank'=>$t['academic_rank']??'',
