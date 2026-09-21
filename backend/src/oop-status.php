@@ -6,8 +6,8 @@ function oopStatusList(array $input): array
     $q=listText($input,'q');
     $direction=listText($input,'direction');
     $status=listText($input,'status');
-    $params=[likeText($q)];
-    $where="concat_ws(' ',p.id_program,p.name_program) ILIKE $1";
+    $params=[];
+    $where=searchCondition("concat_ws(' ',p.id_program,p.name_program)",$q,$params);
     if($direction!==''){
         $params[]=$direction;
         $where.=' AND p.id_direction::text=$'.count($params);

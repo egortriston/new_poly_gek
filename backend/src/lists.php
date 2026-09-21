@@ -42,6 +42,34 @@ function likeText(string $query): string
     return '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query).'%';
 }
 
+function searchWords(string $text): array
+{
+    $normalized = str_replace(['ё', '·', '•', '|'], ['е', ' ', ' ', ' '], mb_strtolower($text, 'UTF-8'));
+    $words = preg_split('/\s+/u', trim($normalized), -1, PREG_SPLIT_NO_EMPTY);
+    return array_values(array_unique($words));
+}
+
+function matchesSearch(string $text, string $query): bool
+{
+    $text = str_replace('ё', 'е', mb_strtolower($text, 'UTF-8'));
+    foreach (searchWords($query) as $word) {
+        if (!str_contains($text, $word)) return false;
+    }
+    return true;
+}
+
+// Apply every fragment before pagination so unloaded records remain searchable.
+function searchCondition(string $expression, string $text, array &$params): string
+{
+    $words = searchWords($text);
+    $conditions = [];
+    foreach (array_unique($words) as $word) {
+        $params[] = likeText($word);
+        $conditions[] = "replace(lower($expression), 'ё', 'е') LIKE $".count($params);
+    }
+    return $conditions ? '('.implode(' AND ', $conditions).')' : 'TRUE';
+}
+
 function catalogList(string $kind, array $input): array
 {
     $def = catalogDefinitions()[$kind] ?? throw new ApiError(404, 'NOT_FOUND', 'Справочник не найден.');
@@ -65,8 +93,8 @@ function catalogList(string $kind, array $input): array
     }
     if ($kind === 'directions') $extras .= ', (SELECT count(*) FROM program_list p WHERE p.id_direction=t.id_direction) AS _program_count';
     if ($kind === 'teachers') $search[]='t.id_teacher';
-    $params = [likeText($q)];
-    $conditions = ["concat_ws(' ', ".implode(',', $search).") ILIKE $1"];
+    $params = [];
+    $conditions = [searchCondition("concat_ws(' ', ".implode(',', $search).")", $q, $params)];
     foreach ([$filterKey=>$filter, $def['pk']=>$id] as $field=>$value) if ($field !== '' && $value !== '') {
         $params[]=$value; $conditions[]="t.$field=$".count($params);
     }
@@ -97,9 +125,12 @@ function peopleList(string $category, array $input): array
     if (!in_array($category,['external','chairmen','complex'],true)) throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
     $q=listText($input,'q'); $sphere=listText($input,'sphere'); $id=listText($input,'id'); $person=listText($input,'person');
     $external=$category==='external';
-    $params=[likeText($q)];
-    $sql=$external ? "SELECT t.* FROM sec_member t WHERE t.sm_outer=true AND concat_ws(' ',t.sm_name,t.organization,t.sm_position) ILIKE $1"
-        : "SELECT t.* FROM sec_predsedatel_s t LEFT JOIN sec_member m ON m.sm_id=t.sm_id WHERE t.complex IS ".($category==='complex'?'TRUE':'NOT TRUE')." AND concat_ws(' ',coalesce(m.sm_name,'Участник не найден'),m.organization,m.sm_position) ILIKE $1";
+    $params=[];
+    $expression=$external ? "concat_ws(' ',t.sm_name,t.organization,t.sm_position)"
+        : "concat_ws(' ',coalesce(m.sm_name,'Участник не найден'),m.organization,m.sm_position)";
+    $condition=searchCondition($expression,$q,$params);
+    $sql=$external ? "SELECT t.* FROM sec_member t WHERE t.sm_outer=true AND $condition"
+        : "SELECT t.* FROM sec_predsedatel_s t LEFT JOIN sec_member m ON m.sm_id=t.sm_id WHERE t.complex IS ".($category==='complex'?'TRUE':'NOT TRUE')." AND $condition";
     $key=$external?'sm_id':'id_predsedatel_sc';
     if ($sphere !== '' && !$external) {$params[]=$sphere; $sql.=' AND t.area=$'.count($params);}
     if ($id !== '') {$params[]=$id; $sql.=" AND t.$key=$".count($params);}
@@ -128,8 +159,9 @@ function optionList(string $kind, array $input): array
         default=>throw new ApiError(404,'NOT_FOUND','Справочник не найден.'),
     };
     $q=listText($input,'q'); $id=listText($input,'id');
-    $params=[likeText($q)];
-    $sql="SELECT * FROM ($sql) options WHERE label ILIKE $1";
-    if ($id !== '') {$params[]=$id; $sql.=' AND value=$2';}
+    $params=[];
+    $condition=searchCondition("label", $q, $params);
+    $sql="SELECT * FROM ($sql) options WHERE $condition";
+    if ($id !== '') {$params[]=$id; $sql.=' AND value=$'.count($params);}
     return listPage($sql,'value',$params,[$kind,$q,$id],$input);
 }

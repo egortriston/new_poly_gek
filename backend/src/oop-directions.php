@@ -20,9 +20,9 @@ function oopDirectionOptions(string $kind, string $index, array $input): array
     $ref=oopDirectionDefinition($kind)['refs'][(int)$index]??throw new ApiError(404,'NOT_FOUND','Поле не найдено.');
     [$table,$pk,$label]=$ref;
     $q=listText($input,'q');$direction=listText($input,'direction');$id=listText($input,'id');
-    $params=[likeText($q)];$where="$label ILIKE $1";
+    $params=[];$where=searchCondition($label,$q,$params);
     if(in_array($table,['prof_tasks','prof_objects'],true)){
-        $params[]=$direction;$where.=' AND id_direction::text=$2';
+        $params[]=$direction;$where.=' AND id_direction::text=$'.count($params);
     }
     if($id!==''){$params[]=$id;$where.=" AND $pk::text=$".count($params);}
     $page=listPage("SELECT $pk,$pk::text AS value,$label AS label FROM $table WHERE $where",$pk,$params,[$kind,$index,$q,$direction,$id],$input);
@@ -31,7 +31,7 @@ function oopDirectionOptions(string $kind, string $index, array $input): array
 
 function oopDirectionList(string $kind,array $input): array
 {
-    $def=oopDirectionDefinition($kind);$params=[likeText(listText($input,'q'))];
+    $def=oopDirectionDefinition($kind);$params=[];
     $labels=[];
     foreach($def['fields'] as $index=>$field){
         if(isset($def['refs'][$index])){
@@ -40,8 +40,8 @@ function oopDirectionList(string $kind,array $input): array
         }else $labels[]="t.$field";
     }
     $direction="concat_ws(' · ',d.number_direction,d.name_direction)";
-    $where="concat_ws(' ',$direction,".implode(',',$labels).') ILIKE $1';
-    if(listText($input,'direction')!==''){$params[]=listText($input,'direction');$where.=' AND t.id_direction::text=$2';}
+    $where=searchCondition("concat_ws(' ',$direction,".implode(',',$labels).')',listText($input,'q'),$params);
+    if(listText($input,'direction')!==''){$params[]=listText($input,'direction');$where.=' AND t.id_direction::text=$'.count($params);}
     $extra='';foreach($labels as $index=>$label)$extra.=",$label AS _label$index";
     $page=listPage("SELECT t.*,$direction AS _direction $extra FROM {$def['table']} t LEFT JOIN direction_list d USING(id_direction) WHERE $where",$def['pk'],$params,[$kind,listText($input,'q'),listText($input,'direction')],$input);
     $page['items']=array_map(function($row)use($def){

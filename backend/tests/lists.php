@@ -31,3 +31,11 @@ $opts=optionList('people',[]);check(count($opts['items'])===50,'Options are boun
 check(count(optionList('people',['q'=>'участник 60'])['items'])===1,'Option search reaches unloaded choices');
 check(count(optionList('people',['id'=>$last['items'][0]['personId']])['items'])===1,'Selected option independently resolved');
 echo "PASS: cursor traversal, complete search, literal wildcards, filters, scope, list version, direct cards and remote options.".PHP_EOL;
+
+check(catalogList('disciplines',['q'=>'100%_тест · последняя','id_school'=>$school])['total']===1,'Unordered fragments and separators with school filter');
+check(catalogList('disciplines',['q'=>'измененная'])['total']===1,'Yo and ye are equivalent');
+check(peopleList('external',['q'=>'60 тестовый'])['total']===1,'People search supports reversed fragments');
+check(optionList('people',['q'=>'60 · тестовый','id'=>$last['items'][0]['personId']])['total']===1,'Option ID filter follows multiple search parameters');
+check(matchesSearch('38.03.05_01 · Архитектура предприятия','предприятия 38.03.05_01 архитект'),'Program code and partial name match in any order');
+check(!matchesSearch('38.03.05_01 · Архитектура предприятия','38.03.05_02'),'Program codes stay distinct');
+echo "PASS: flexible search regression checks.".PHP_EOL;

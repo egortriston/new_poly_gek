@@ -17,8 +17,8 @@ function oopDataList(string $kind,array $input): array
     $joins=$kind==='matrix' ? ' LEFT JOIN prof_tasks t ON t.id_prof_task=r.id_prof_task LEFT JOIN types_task tt ON tt.id_type_task=t.id_type_task LEFT JOIN prof_objects o ON o.id_prof_object=r.id_prof_object' : ' LEFT JOIN education_form e ON e.id_ef=r.id_ef';
     $extra=$kind==='matrix' ? "COALESCE(tt.name_type_task,r.name_type_task,'') AS task_type,COALESCE(t.name_prof_task,'') AS task_name,COALESCE(o.name_prof_object,r.name_prof_object,'') AS object_name" : "e.name_education_form";
     $search=$kind==='matrix' ? 'tt.name_type_task,t.name_prof_task,o.name_prof_object,r.category_prof,r.code_prof,r.indicator_prof,r.base' : 'e.name_education_form';
-    $params=[likeText($q)];$where="concat_ws(' ',p.id_program,p.name_program,$search) ILIKE $1";
-    if($program!==''){$params[]=$program;$where.=' AND (r.id_mep::text=$2'.($kind==='matrix'?' OR r.id_mep IS NULL':'').')';}
+    $params=[];$where=searchCondition("concat_ws(' ',p.id_program,p.name_program,$search)",$q,$params);
+    if($program!==''){$params[]=$program;$where.=' AND (r.id_mep::text=$'.count($params).($kind==='matrix'?' OR r.id_mep IS NULL':'').')';}
     $page=listPage("SELECT r.*,p.id_program,p.name_program,$extra FROM $table r LEFT JOIN program_list p ON p.id_mep=r.id_mep $joins WHERE $where",$pk,$params,['oop-data',$kind,$q,$program],$input);
     foreach($page['items'] as &$row){
         $raw=$row;

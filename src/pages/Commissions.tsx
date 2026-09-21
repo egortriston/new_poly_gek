@@ -1,3 +1,4 @@
+import { matchesSearch } from "../utils/search";
 import { PageTitle } from '../components/PageTitle';
 import { AppSelect } from '../components/AppSelect';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
@@ -15,7 +16,7 @@ export function Commissions() {
  const setFilter = (key: string, value: string) => { const next = new URLSearchParams(params); value ? next.set(key, value) : next.delete(key); setParams(next, { replace: true }); };
  const annual = useMemo(() => commissions.filter(c => c.year === year), [commissions, year]);
  const ready = annual.filter(isReady).length;
- const filtered = annual.filter(c => (!school || c.school === school) && (status === 'all' || (status === 'ready' ? isReady(c) : !isReady(c))) && `${c.number} ${c.gekId} ${schoolName(c.school)} ${people.find(p => p.id === c.chairmanId)?.name ?? ''} ${c.programIds.map(id => programs.find(p => p.id === id)?.name).join(' ')}`.toLocaleLowerCase('ru').includes(query.toLocaleLowerCase('ru'))).sort((a, b) => (Number(a.number) - Number(b.number)) * (order === 'asc' ? 1 : -1));
+ const filtered = annual.filter(c => (!school || c.school === school) && (status === 'all' || (status === 'ready' ? isReady(c) : !isReady(c))) && matchesSearch(`${c.number} ${c.gekId} ${schoolName(c.school)} ${people.find(p => p.id === c.chairmanId)?.name ?? ''} ${c.programIds.map(id => programs.filter(p => p.id === id).map(p => `${p.code} ${p.name}`).join(' ')).join(' ')}`, query)).sort((a, b) => (Number(a.number) - Number(b.number)) * (order === 'asc' ? 1 : -1));
  useEffect(() => { setPage(1); setSelected([]); }, [query, school, status, year]);
  const shown = filtered.slice((page - 1) * 8, page * 8); const selectedRows = filtered.filter(c => selected.includes(c.id)); const printRows = selectedRows.length ? selectedRows : filtered;
  const toggle = (id: string) => setSelected(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id]);

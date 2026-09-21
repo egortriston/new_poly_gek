@@ -16,12 +16,12 @@ function oopGeneralList(string $kind,array $input): array
 {
     $def=oopGeneralDefinition($kind);
     $q=listText($input,'q');$level=listText($input,'level');
-    $params=[likeText($q)];
+    $params=[];
     $search=implode(',',array_map(fn($field)=>'t.'.$field,$def['fields']));
     $join=$kind==='uk'?' LEFT JOIN levels l ON l.id_level=t.id_level':'';
     $extra=$kind==='uk'?',l.level AS _level':'';
-    $where="concat_ws(' ',$search".($kind==='uk'?',l.level':'').") ILIKE $1";
-    if($kind==='uk'&&$level!==''){$params[]=$level;$where.=' AND t.id_level::text=$2';}
+    $where=searchCondition("concat_ws(' ',$search".($kind==='uk'?',l.level':'').")",$q,$params);
+    if($kind==='uk'&&$level!==''){$params[]=$level;$where.=' AND t.id_level::text=$'.count($params);}
     $page=listPage("SELECT t.* $extra FROM {$def['table']} t $join WHERE $where",$def['pk'],$params,['oop-general',$kind,$q,$level],$input);
     $page['items']=array_map(function($row)use($def){
         $label=$row['_level']??'';unset($row['_level']);

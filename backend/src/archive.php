@@ -114,7 +114,7 @@ function archiveList(array $input): array
         $items=[];
         foreach($names as $name) {
             if(in_array($name,['.','..',ARCHIVE_INTERNAL],true))continue;
-            if($q!==''&&!str_contains(mb_strtolower($name),$q))continue;
+            if(!matchesSearch($name,$q))continue;
             $items[]=archiveItem($relative===''?$name:$relative.'/'.$name);
         }
         usort($items,fn($a,$b)=>($b['kind']==='folder')<=>($a['kind']==='folder') ?:

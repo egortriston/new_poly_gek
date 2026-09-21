@@ -1,3 +1,4 @@
+import { matchesSearch } from "../utils/search";
 import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -57,9 +58,7 @@ export function RemoteSelect({
   );
   const available = localOptions
     ? localOptions.filter((option) =>
-        option.label
-          .toLocaleLowerCase("ru")
-          .includes(settled.trim().toLocaleLowerCase("ru")),
+        matchesSearch(option.label, settled),
       )
     : list.items;
   const options = required

@@ -1,3 +1,4 @@
+import { matchesSearch } from "../utils/search";
 import { useAttestationCatalog } from '../data/spo';
 import { SpoPdfPreview } from './SpoDocuments';
 import { useEffect, useRef, useState } from 'react';
@@ -28,7 +29,7 @@ export function AttestationList({ kind, rows, onOpen, onRemove }: { kind: Attest
     return t ? { initials: t.name_teacher.split(/\s+/).slice(0, 2).map(n => n[0]).join(''), color: 'sage' } : undefined;
   };
   const schoolInfo = (r: AttestationRecord) => c.schools.find(s => s.id_school === r.school);
-  const filtered = rows.filter(r => (!school || r.school === (school === 'institute' ? '' : school)) && (status === 'all' || isAttestationFilled(r) === (status === 'ready')) && [r.number, schoolInfo(r)?.name_school, schoolInfo(r)?.short, teacher(r.chairman)?.name_teacher, r.kind !== 'ppa' ? fixedChairman : '', r.special, ...c.programs.filter(p => r.programs.includes(p.id_mep)).map(p => p.name_program)].join(' ').toLocaleLowerCase('ru').includes(query.toLocaleLowerCase('ru'))).sort((a, b) => (Number(a.number) - Number(b.number)) * (descending ? -1 : 1));
+  const filtered = rows.filter(r => (!school || r.school === (school === 'institute' ? '' : school)) && (status === 'all' || isAttestationFilled(r) === (status === 'ready')) && matchesSearch([r.number, schoolInfo(r)?.name_school, schoolInfo(r)?.short, teacher(r.chairman)?.name_teacher, r.kind !== 'ppa' ? fixedChairman : '', r.special, ...c.programs.filter(p => r.programs.includes(p.id_mep)).map(p => `${p.id_program} ${p.name_program}`)].join(' '), query)).sort((a, b) => (Number(a.number) - Number(b.number)) * (descending ? -1 : 1));
   const lastPage = Math.max(1, Math.ceil(filtered.length / 8));
   const currentPage = Math.min(page, lastPage);
   const shown = filtered.slice(0,page*50);
