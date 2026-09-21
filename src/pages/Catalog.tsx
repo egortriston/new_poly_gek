@@ -138,7 +138,7 @@ function Table({ kind }: { kind: CatalogKind }) {
         ]
       : fields[kind];
   const columns = formFields.filter(
-    (f) => !["rp", "dp", "scient_position", "staff_position"].includes(f.key),
+    (f) => !["rp", "dp", "staff_position"].includes(f.key),
   );
   const filterKey =
     kind === "programs"
