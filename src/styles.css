@@ -34,6 +34,11 @@
 .sidebar::-webkit-scrollbar-track,.navigation-tree::-webkit-scrollbar-track{background:transparent}
 .sidebar::-webkit-scrollbar-thumb,.navigation-tree::-webkit-scrollbar-thumb{background:rgba(98,123,87,.18);border-radius:10px}
 .sidebar:hover::-webkit-scrollbar-thumb,.navigation-tree:hover::-webkit-scrollbar-thumb{background:rgba(98,123,87,.42)}
+/* Use the custom scrollbar in Chromium so native arrow buttons are hidden. */
+@supports selector(::-webkit-scrollbar){
+ .sidebar,.navigation-tree,.sidebar:hover,.sidebar:focus-within,.navigation-tree:hover,.navigation-tree:focus-within{scrollbar-width:auto;scrollbar-color:auto}
+ .sidebar::-webkit-scrollbar-button,.navigation-tree::-webkit-scrollbar-button{display:none;width:0;height:0}
+}
 @media(forced-colors:active){.sidebar,.navigation-tree{scrollbar-color:auto}}
 .app-select{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;min-height:40px;padding:10px 12px;border:1px solid #dce4d7;border-radius:8px;background:#fff;color:#344b39;font-family:inherit;font-size:13px;line-height:1.5;text-align:left;cursor:pointer;transition:background .16s,border-color .16s,box-shadow .16s}
 .app-select>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}.app-select:hover{background:#f8faf5;border-color:#a7b99d}.app-select:focus-visible,.app-select[data-state=open]{outline:none;border-color:#78966b;box-shadow:0 0 0 3px #e9f1e3}.app-select[data-placeholder]{color:#8b9683}.app-select:disabled{opacity:.5;cursor:not-allowed}.app-select-arrow{display:inline-flex;color:#809275;flex-shrink:0;transition:transform .18s}.app-select[data-state=open] .app-select-arrow{transform:rotate(180deg)}

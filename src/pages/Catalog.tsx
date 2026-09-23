@@ -28,7 +28,7 @@ import {
 } from "../data/catalog";
 const groups = {
   structure: {
-    title: "Структура университета",
+    title: "Структура института",
     description: "Высшие школы, руководители и преподаватели.",
     items: [
       [
@@ -44,7 +44,7 @@ const groups = {
     ],
   },
   education: {
-    title: "Образование",
+    title: "Учебные справочники",
     description:
       "Направления, программы и дисциплины в отдельных связанных справочниках.",
     items: [
@@ -67,6 +67,7 @@ const groups = {
   },
 };
 export function CatalogHub({ group }: { group: "structure" | "education" }) {
+  const { user } = useStore();
   const g = groups[group];
   return (
     <div className="page-enter hub-page">
@@ -76,10 +77,10 @@ export function CatalogHub({ group }: { group: "structure" | "education" }) {
       <div className="hub-welcome">
         <span className="eyebrow">СПРАВОЧНИКИ</span>
         <PageTitle>{g.title}</PageTitle>
-        <p>{g.description}</p>
+        <p>{group === "education" && user?.role !== "admin" ? "Дисциплины высших школ." : g.description}</p>
       </div>
       <div className="people-hub-grid">
-        {g.items.map(([key, title, description]) => (
+        {g.items.filter(([key]) => canAccessPath(user, `/data/catalog/${key}`)).map(([key, title, description]) => (
           <Link
             key={key}
             className="module-card available"
@@ -117,7 +118,7 @@ export function CatalogTable() {
     <Empty title="Таблица не найдена" />
   );
 }
-import { api } from "../api";
+import { api, canAccessPath } from "../api";
 import { useProgressiveList, useDebounced } from "../data/useProgressiveList";
 
 function Table({ kind }: { kind: CatalogKind }) {
@@ -243,10 +244,10 @@ function Table({ kind }: { kind: CatalogKind }) {
       <Link className="text-button" to={back}>
         Исходные данные /{" "}
         {kind === "teachers"
-          ? "Структура университета"
+          ? "Структура института"
           : kind === "schools"
-            ? "Структура университета"
-            : "Образование"}{" "}
+            ? "Структура института"
+            : "Учебные справочники"}{" "}
         /
       </Link>
       <div className="page-heading catalog-heading">

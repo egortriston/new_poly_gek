@@ -113,6 +113,6 @@ export async function signOut(): Promise<void> {
 export function canAccessPath(user: SessionUser | null, path: string): boolean {
   return (
     user?.role === "admin" ||
-    !/^\/(databases|oop\/(status|data\/(directions|general)))(\/|$)/.test(path)
+    !/^\/(databases|data\/catalog\/(directions|programs)|oop\/(status|data\/(directions|general)))(\/|$)/.test(path)
   );
 }

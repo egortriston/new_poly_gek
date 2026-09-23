@@ -37,7 +37,7 @@ export function GekDocuments() {
   ];
   return <div className="page-enter hub-page">
     <Link className="text-button" to="/gek">Формирование ГЭК /</Link>
-    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Формирование и печать</PageTitle><p>Выберите документ и состав высших школ для печати.</p></div>
+    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p></div>
     <div className="gek-print-settings">
       <label className="gek-numbering">Начать нумерацию ГЭК с<input aria-label="Начать нумерацию ГЭК с" aria-invalid={!!numberError} aria-describedby={numberError?'gek-numbering-error':undefined} disabled={saving} type="number" min="1" max="9999" value={start} onChange={e=>{setStart(e.target.value);setNumberError('');}}/></label>
       <label className="document-school">Высшая школа<AppSelect disabled={saving} value={school} onChange={e=>setSchool(e.target.value)}><option value="">Выберите высшую школу</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</AppSelect></label>
