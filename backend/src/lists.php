@@ -123,7 +123,7 @@ function peopleEntry(string $category, array $row): array
 function peopleList(string $category, array $input): array
 {
     if (!in_array($category,['external','chairmen','complex'],true)) throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
-    $q=listText($input,'q'); $sphere=listText($input,'sphere'); $id=listText($input,'id'); $person=listText($input,'person');
+    $q=listText($input,'q'); $school=listText($input,'school'); $sphere=listText($input,'sphere'); $id=listText($input,'id'); $person=listText($input,'person');
     $external=$category==='external';
     $params=[];
     $expression=$external ? "concat_ws(' ',t.sm_name,t.organization,t.sm_position)"
@@ -132,10 +132,16 @@ function peopleList(string $category, array $input): array
     $sql=$external ? "SELECT t.* FROM sec_member t WHERE t.sm_outer=true AND $condition"
         : "SELECT t.* FROM sec_predsedatel_s t LEFT JOIN sec_member m ON m.sm_id=t.sm_id WHERE t.complex IS ".($category==='complex'?'TRUE':'NOT TRUE')." AND t.area IS NOT NULL AND btrim(t.area)<>'' AND $condition";
     $key=$external?'sm_id':'id_predsedatel_sc';
+    if ($school !== '' && !$external) {
+        $params[]=$school;
+        $sql.=$category==='complex'
+            ? ' AND EXISTS(SELECT 1 FROM sec_complex_sc sc WHERE sc.id_predsedatel_sc=t.id_predsedatel_sc AND sc.id_school=$'.count($params).')'
+            : ' AND EXISTS(SELECT 1 FROM sec_helper sh WHERE sh.chairman=t.sm_id AND sh.id_school=$'.count($params).')';
+    }
     if ($sphere !== '' && !$external) {$params[]=$sphere; $sql.=' AND t.area=$'.count($params);}
     if ($id !== '') {$params[]=$id; $sql.=" AND t.$key=$".count($params);}
     if ($person !== '') {$params[]=str_starts_with($person,'member:')?substr($person,7):'-1'; $sql.=' AND t.sm_id=$'.count($params);}
-    $page=listPage($sql,$key,$params,[$category,$q,$sphere,$id,$person],$input);
+    $page=listPage($sql,$key,$params,[$category,$q,$school,$sphere,$id,$person],$input);
     $page['items']=array_map(fn($row)=>peopleEntry($category,$row),$page['items']);
     return $page;
 }

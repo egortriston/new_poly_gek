@@ -44,6 +44,7 @@ export function PeopleTable() {
   const [deleting, setDeleting] = useState<Entry | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [query, setQuery] = useState("");
+  const [school, setSchool] = useState("");
   const [sphere, setSphere] = useState("");
   const [entry, setEntry] = useState<Entry | null>(null);
   const [printing, setPrinting] = useState<Entry | null>(null);
@@ -53,7 +54,7 @@ export function PeopleTable() {
     "/people/" +
     category +
     "/list?" +
-    new URLSearchParams({ q: settled, sphere });
+    new URLSearchParams({ q: settled, school, sphere });
   const source = useProgressiveList<Entry>(listPath, "id");
   const catalog = useServerData<{
     schools: { id_school: string; name_school: string }[];
@@ -83,6 +84,7 @@ export function PeopleTable() {
     });
     setAdding(false);
     setQuery("");
+    setSchool("");
     setSphere("");
     notify("Запись добавлена");
     try {
@@ -273,15 +275,29 @@ export function PeopleTable() {
             />
           </div>
           {!external && (
-            <AppSelect
-              aria-label="Сфера деятельности"
-              value={sphere}
-              onChange={(e) => setSphere(e.target.value)}
-            >
-              <option value="">Все сферы деятельности</option>
-              <option>Образование</option>
-              <option>Бизнес</option>
-            </AppSelect>
+            <>
+              <AppSelect
+                aria-label="Высшая школа"
+                value={school}
+                onChange={(e) => setSchool(e.target.value)}
+              >
+                <option value="">Все высшие школы</option>
+                {schools.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </AppSelect>
+              <AppSelect
+                aria-label="Сфера деятельности"
+                value={sphere}
+                onChange={(e) => setSphere(e.target.value)}
+              >
+                <option value="">Все сферы деятельности</option>
+                <option>Образование</option>
+                <option>Бизнес</option>
+              </AppSelect>
+            </>
           )}
 
           {source.ready && (
@@ -416,7 +432,7 @@ export function PeopleTable() {
         </div>
         {!rows.length && !source.loading && !source.error && (
           <Empty title="Ничего не найдено">
-            Измените поиск или сферу деятельности.
+            Измените поиск, высшую школу или сферу деятельности.
           </Empty>
         )}
       </div>

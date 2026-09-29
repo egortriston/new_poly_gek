@@ -30,6 +30,13 @@ check(peopleList('external',['id'=>$last['items'][0]['id']])['items'][0]['person
 $opts=optionList('people',[]);check(count($opts['items'])===50,'Options are bounded');
 check(count(optionList('people',['q'=>'участник 60'])['items'])===1,'Option search reaches unloaded choices');
 check(count(optionList('people',['id'=>$last['items'][0]['personId']])['items'])===1,'Selected option independently resolved');
+$filteredChair=savePeople('chairmen',['personId'=>'member:'.$external,'sphere'=>'Бизнес','schoolIds'=>[$school2]]);
+$filteredComplex=savePeople('complex',['personId'=>$complexRow['personId'],'sphere'=>'Образование','schoolIds'=>[$school,$school2]]);
+check(peopleList('chairmen',['school'=>$school2])['total']===1,'Chairman school filter uses the assigned school');
+check(peopleList('chairmen',['school'=>$school])['total']===0,'Chairman school filter excludes other schools');
+check(peopleList('complex',['school'=>$school])['total']===1,'Complex chairman filter finds any assigned school');
+check(peopleList('complex',['school'=>$school2,'sphere'=>'Образование'])['total']===1,'School and sphere filters work together');
+check(peopleList('complex',['school'=>$school2,'sphere'=>'Бизнес'])['total']===0,'Combined filters exclude non-matching cards');
 echo "PASS: cursor traversal, complete search, literal wildcards, filters, scope, list version, direct cards and remote options.".PHP_EOL;
 
 check(catalogList('disciplines',['q'=>'100%_тест · последняя','id_school'=>$school])['total']===1,'Unordered fragments and separators with school filter');
