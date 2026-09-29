@@ -3,6 +3,7 @@ import type { Person } from "../data/model";
 
 import { Field, Modal } from "./ui";
 import { RemoteSelect } from "./RemoteSelect";
+import { SchoolMultiSelect } from "./SchoolMultiSelect";
 import { AppSelect } from "./AppSelect";
 import type { Entry } from "../pages/PeopleTable";
 export function AddPersonEntry({
@@ -20,6 +21,7 @@ export function AddPersonEntry({
   const [personId, setPersonId] = useState("");
   const [sphere, setSphere] = useState("");
   const [school, setSchool] = useState("");
+  const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [values, setValues] = useState({
     name: "",
     organization: "",
@@ -54,6 +56,10 @@ export function AddPersonEntry({
           .join(""),
       };
     } else {
+      if (category === "complex" && schoolIds.length === 0) {
+        setError("Выберите хотя бы одну высшую школу.");
+        return;
+      }
       if (!personId || !sphere || (category === "chairmen" && !school)) {
         setError(
           "Выберите человека, сферу деятельности и высшую школу, если она требуется.",
@@ -66,7 +72,7 @@ export function AddPersonEntry({
       personId: external ? person!.id : personId,
       person: person!,
       sphere: (sphere || "Бизнес") as Entry["sphere"],
-      schoolIds: school ? [school] : [],
+      schoolIds: category === "complex" ? schoolIds : school ? [school] : [],
       values: {},
     };
     setBusy(true);
@@ -137,6 +143,7 @@ export function AddPersonEntry({
                 aria-label={label}
                 required={key === "name"}
                 value={values[key as keyof typeof values]}
+              placeholder={key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
                 onChange={(e) => {
                   setValues({ ...values, [key]: e.target.value });
                   setError("");
@@ -201,10 +208,7 @@ export function AddPersonEntry({
                 </AppSelect>
               </Field>
             ) : (
-              <p className="field-hint">
-                Высшие школы можно выбрать следующим шагом в карточке
-                комплексной ГЭК.
-              </p>
+              <Field label="Высшие школы" required><SchoolMultiSelect required schools={schools} value={schoolIds} onChange={ids => {setSchoolIds(ids);setError("");}} disabled={busy}/></Field>
             )}
           </>
         )}

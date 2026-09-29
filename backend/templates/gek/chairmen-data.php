@@ -3,7 +3,8 @@
 
 
 $query = "SELECT sec_member.sm_name, sec_predsedatel_s.id_predsedatel_sc FROM sec_predsedatel_s
-JOIN sec_member ON sec_predsedatel_s.sm_id = sec_member.sm_id";
+JOIN sec_member ON sec_predsedatel_s.sm_id = sec_member.sm_id
+WHERE sec_predsedatel_s.area IS NOT NULL AND btrim(sec_predsedatel_s.area) <> ''";
 $result = pg_query($conn, $query);
 $resultArray = array();
 

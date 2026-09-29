@@ -187,7 +187,7 @@ export function PeopleTable() {
         version: deleting.version,
       });
       setDeleting(null);
-      notify("Запись удалена");
+      notify(external ? "Запись удалена" : "Назначение снято");
       await source.reload();
     } catch (error) {
       setDeleteError((error as Error).message);
@@ -397,8 +397,8 @@ export function PeopleTable() {
                         </button>
                         <button
                           className="icon-button"
-                          title="Удалить"
-                          aria-label={`Удалить ${p.name}`}
+                          title={external ? "Удалить" : "Снять назначение"}
+                          aria-label={`${external ? "Удалить" : "Снять назначение"} ${p.name}`}
                           onClick={() => {
                             setDeleting(e);
                             setDeleteError("");
@@ -439,8 +439,8 @@ export function PeopleTable() {
       )}
       {deleting && (
         <Confirm
-          title="Удалить запись?"
-          confirmLabel={busy ? "Удаление…" : "Удалить"}
+          title={external ? "Удалить запись?" : "Снять назначение?"}
+          confirmLabel={busy ? (external ? "Удаление…" : "Снятие…") : (external ? "Удалить" : "Снять назначение")}
           danger
           onClose={() => {
             if (!busy) setDeleting(null);
@@ -448,7 +448,9 @@ export function PeopleTable() {
           onConfirm={deleteEntry}
         >
           «{deleting.person?.name}».{" "}
-          {deleteError || "Связанные с комиссиями записи удалить нельзя."}
+          {deleteError || (external
+            ? "Связанные с комиссиями записи удалить нельзя."
+            : "Карточка и выбранные ООП сохранятся. Председатель исчезнет из текущего списка и его печати, но останется в уже созданных ГЭК.")}
         </Confirm>
       )}
     </div>

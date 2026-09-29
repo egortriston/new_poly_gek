@@ -84,6 +84,7 @@ export function ExternalPersonEditor({
               aria-label={label}
               required={key === "name"}
               value={draft[key]}
+              placeholder={key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
               onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
             />
           </Field>

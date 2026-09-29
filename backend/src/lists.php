@@ -130,7 +130,7 @@ function peopleList(string $category, array $input): array
         : "concat_ws(' ',coalesce(m.sm_name,'Участник не найден'),m.organization,m.sm_position)";
     $condition=searchCondition($expression,$q,$params);
     $sql=$external ? "SELECT t.* FROM sec_member t WHERE t.sm_outer=true AND $condition"
-        : "SELECT t.* FROM sec_predsedatel_s t LEFT JOIN sec_member m ON m.sm_id=t.sm_id WHERE t.complex IS ".($category==='complex'?'TRUE':'NOT TRUE')." AND $condition";
+        : "SELECT t.* FROM sec_predsedatel_s t LEFT JOIN sec_member m ON m.sm_id=t.sm_id WHERE t.complex IS ".($category==='complex'?'TRUE':'NOT TRUE')." AND t.area IS NOT NULL AND btrim(t.area)<>'' AND $condition";
     $key=$external?'sm_id':'id_predsedatel_sc';
     if ($sphere !== '' && !$external) {$params[]=$sphere; $sql.=' AND t.area=$'.count($params);}
     if ($id !== '') {$params[]=$id; $sql.=" AND t.$key=$".count($params);}
@@ -152,7 +152,7 @@ function optionList(string $kind, array $input): array
             FROM teacher t LEFT JOIN school s ON s.id_school=t.id_school
             WHERE NOT EXISTS(SELECT 1 FROM sec_member m WHERE m.employee_number=t.id_teacher)",
         'chairmancandidates'=>"SELECT 'member:'||m.sm_id AS value, concat_ws(' · ',m.sm_name,m.organization) AS label FROM sec_member m
-            WHERE NOT EXISTS(SELECT 1 FROM sec_predsedatel_s p WHERE p.sm_id=m.sm_id)
+            WHERE NOT EXISTS(SELECT 1 FROM sec_predsedatel_s p WHERE p.sm_id=m.sm_id AND p.area IS NOT NULL AND btrim(p.area)<>'')
             UNION ALL SELECT 'teacher:'||t.id_teacher AS value, concat_ws(' · ',t.name_teacher,s.name_school) AS label
             FROM teacher t LEFT JOIN school s ON s.id_school=t.id_school
             WHERE NOT EXISTS(SELECT 1 FROM sec_member m WHERE m.employee_number=t.id_teacher)",

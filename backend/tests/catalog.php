@@ -65,7 +65,7 @@ expectError('IN_USE',fn()=>deleteCatalog('directions',['id'=>$direction,'version
 
 $external=savePeople('external',['person'=>['name'=>'Тестовый Внешний','organization'=>'Организация']])['id'];
 $chair=savePeople('chairmen',['personId'=>'member:'.$external,'sphere'=>'Бизнес','schoolIds'=>[$school],'values'=>['career_activity'=>'Практика','publications'=>'Сохранённые сведения']])['id'];
-expectError('DUPLICATE',fn()=>savePeople('complex',['personId'=>'member:'.$external,'sphere'=>'Образование','schoolIds'=>[]]));
+expectError('DUPLICATE',fn()=>savePeople('complex',['personId'=>'member:'.$external,'sphere'=>'Образование','schoolIds'=>[$school]]));
 expectError('IN_USE',fn()=>deletePeople('external',['id'=>$external,'version'=>cardRow('external',$external)['version']]));
 $old=cardRow('chairmen',$chair);
 savePeople('chairmen',[...$old,'schoolIds'=>[$school2],'values'=>['career_activity'=>'Новая практика']]);
@@ -77,6 +77,8 @@ expectError('INVALID_REFERENCE',fn()=>savePeople('chairmen',[...$new,'schoolIds'
 check(cardRow('chairmen',$chair)['schoolIds']===[$school2],'Failed save must not partially change card');
 $complex=savePeople('complex',['personId'=>'teacher:'.$teacher,'sphere'=>'Образование','schoolIds'=>[$school,$school2],'values'=>['lectures'=>'Лекции']])['id'];
 $complexRow=cardRow('complex',$complex);
+expectError('VALIDATION',fn()=>savePeople('complex',[...$complexRow,'schoolIds'=>[]]));
+check(cardRow('complex',$complex)['schoolIds']===[$school,$school2],'Empty school selection must not change saved schools');
 check(str_starts_with($complexRow['personId'],'member:'),'Teacher must link to sec_member');
 check(count(rows('SELECT * FROM sec_member WHERE employee_number=$1',[$teacher]))===1,'No duplicate teacher member');
 savePeople('complex',[...$complexRow,'schoolIds'=>[$school2]]);
@@ -86,13 +88,20 @@ saveCatalog('programs',[...catalogRow('programs',$program),'id'=>$program,'id_pr
 check(rows('SELECT id_program FROM sec_program')[0]['id_program']==='01.03.05_03','Code-based program relation survives rename');
 expectError('IN_USE',fn()=>deleteCatalog('programs',['id'=>$program,'version'=>catalogRow('programs',$program)['version']]));
 query('INSERT INTO sec(chairman,id_school) VALUES($1,$2)',[$external,$school]);
-expectError('IN_USE',fn()=>deletePeople('chairmen',cardRow('chairmen',$chair)));
-query('DELETE FROM sec');
 deletePeople('chairmen',cardRow('chairmen',$chair));
-deletePeople('external',cardRow('external',$external));
+check(count(peopleSnapshot()['entries']['chairmen'])===0,'Deactivated chairman must leave active list');
+check(rows('SELECT area FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair])[0]['area']===null,'Deactivation clears sphere');
+check(count(rows('SELECT * FROM sec_helper WHERE chairman=$1',[$external]))===0,'Deactivation clears regular school links');
+check(count(rows('SELECT * FROM sec WHERE chairman=$1',[$external]))===1,'Deactivation keeps existing GEC assignments');
+check(count(rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair]))===1,'Deactivation keeps professional card');
+$restored=savePeople('chairmen',['personId'=>'member:'.$external,'sphere'=>'Бизнес','schoolIds'=>[$school]])['id'];
+check($restored===$chair,'Reassignment restores the existing card');
+$restoredRow=cardRow('chairmen',$chair);
+check($restoredRow['values']['career_activity']==='Новая практика','Reassignment preserves card fields');
+deletePeople('chairmen',$restoredRow);
 deletePeople('complex',cardRow('complex',$complex));
-check(count(rows('SELECT * FROM sec_program'))===0,'Owned card links removed');
-check(count(rows('SELECT * FROM sec_member WHERE employee_number=$1',[$teacher]))===1,'Deleting a card preserves the member');
+check(count(rows('SELECT * FROM sec_program'))===1,'Deactivation preserves selected programs');
+check(count(rows('SELECT * FROM sec_member WHERE employee_number=$1',[$teacher]))===1,'Deactivation preserves the member');
 deleteCatalog('disciplines',['id'=>$discipline,'version'=>catalogRow('disciplines',$discipline)['version']]);
 check(count(catalogSnapshot()['disciplines'])===0,'Unlinked record deleted');
 $orphan=insertRecord('sec_predsedatel_s',['sm_id'=>'99999','area'=>'Бизнес','complex'=>'f'],'id_predsedatel_sc');

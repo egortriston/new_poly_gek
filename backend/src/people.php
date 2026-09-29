@@ -29,7 +29,7 @@ function peopleSnapshot(): array
         if(array_filter($members,fn($m)=>$m['employee_number']!==null&&$m['employee_number']===$teacher['id_teacher']))continue;
         $people[]=['id'=>'teacher:'.$teacher['id_teacher'],'name'=>$teacher['name_teacher']??'','organization'=>$teacher['name_school']??'', 'position'=>$teacher['position_teacher']??'','degree'=>$teacher['academic_degree']??'','rank'=>$teacher['academic_rank']??'','kind'=>'internal','color'=>'sage','initials'=>mb_substr($teacher['name_teacher']??'',0,1)];
     }
-    foreach(rows('SELECT * FROM sec_predsedatel_s ORDER BY id_predsedatel_sc') as $row){
+    foreach(rows("SELECT * FROM sec_predsedatel_s WHERE area IS NOT NULL AND btrim(area)<>'' ORDER BY id_predsedatel_sc") as $row){
         if(!array_filter($people,fn($person)=>$person['id']==='member:'.$row['sm_id'])){
             $people[]=['id'=>'member:'.$row['sm_id'],'name'=>'Участник не найден','organization'=>'Нарушена связь в исходных данных','position'=>'','degree'=>'','rank'=>'','kind'=>'external','color'=>'sage','initials'=>'?','missing'=>true];
         }
@@ -64,21 +64,28 @@ function savePeople(string $category,array $body): array
             return ['id'=>$id];
         }
         $old=$id?lockedRecord('sec_predsedatel_s','id_predsedatel_sc',$id):null;
+        $reactivated=false;
         if($old){if(($old['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');requireVersion($body,chairState($old));}
         $sphere=requiredText($body,'sphere',true);
         if(!in_array($sphere,['Образование','Бизнес'],true))throw new ApiError(422,'VALIDATION','Выберите сферу деятельности.');
         $schools=$body['schoolIds']??null;
         if(!is_array($schools)||count($schools)>100||count($schools)!==count(array_unique($schools)))throw new ApiError(422,'VALIDATION','Некорректный список школ.');
+        if(!$schools)throw new ApiError(422,'VALIDATION','Выберите хотя бы одну высшую школу.');
         if($category==='chairmen'&&count($schools)!==1)throw new ApiError(422,'VALIDATION','Выберите одну высшую школу.');
         foreach($schools as $school){if(!is_string($school))throw new ApiError(422,'VALIDATION','Неверная школа.');referenceExists('school','id_school',$school);}
         $smId=$old?(string)$old['sm_id']:memberId(requiredText($body,'personId',true));
+        if(!$old){
+            $inactive=rows("SELECT * FROM sec_predsedatel_s WHERE sm_id=$1 AND (area IS NULL OR btrim(area)='') FOR UPDATE",[$smId]);
+            if(count($inactive)>1)throw new ApiError(409,'AMBIGUOUS_PERSON','Для председателя найдено несколько снятых карточек. Обратитесь к администратору.');
+            if($inactive){$old=$inactive[0];$id=(string)$old['id_predsedatel_sc'];$reactivated=true;}
+        }
         if($old && !pg_num_rows(query('SELECT 1 FROM sec_member WHERE sm_id=$1',[$smId])))
             throw new ApiError(409,'MISSING_PERSON','Связанный участник отсутствует. Сначала нужно уточнить и восстановить связь карточки.');
         // The legacy system allows one professional card per member across both kinds.
-        if(!$old && pg_num_rows(query('SELECT 1 FROM sec_predsedatel_s WHERE sm_id=$1',[$smId])))throw new ApiError(409,'DUPLICATE','Карточка этого председателя уже существует.');
+        if(!$old && pg_num_rows(query("SELECT 1 FROM sec_predsedatel_s WHERE sm_id=$1 AND area IS NOT NULL AND btrim(area)<>''",[$smId])))throw new ApiError(409,'DUPLICATE','Карточка этого председателя уже существует.');
         $values=['sm_id'=>$smId,'area'=>$sphere,'complex'=>$category==='complex'?'t':'f'];
         $fields=$body['values']??[];if(!is_array($fields))throw new ApiError(422,'VALIDATION','Неверные поля карточки.');
-        $programs=$body['programIds']??[];
+        $programs=$body['programIds']??($reactivated?chairState($old)['programs']:[]);
         if(!is_array($programs)||count($programs)>300||count($programs)!==count(array_unique($programs)))throw new ApiError(422,'VALIDATION','Некорректный список образовательных программ.');
         $directions=[];
         $programCodes=[];
@@ -93,7 +100,7 @@ function savePeople(string $category,array $body): array
         query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
         foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);
         if($category==='complex'){
-            if(!$old)insertRecord('sec_complex',['chairman'=>$smId],'id_complex');
+            if(!pg_num_rows(query('SELECT 1 FROM sec_complex WHERE chairman=$1',[$smId])))insertRecord('sec_complex',['chairman'=>$smId],'id_complex');
             query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
             foreach($schools as $school)insertRecord('sec_complex_sc',['id_predsedatel_sc'=>$id,'id_school'=>$school],'id');
         }else{
@@ -101,7 +108,7 @@ function savePeople(string $category,array $body): array
             insertRecord('sec_helper',['chairman'=>$smId,'id_school'=>$schools[0]],'id_sec');
         }
         $result=['id'=>$id];
-        if(!$old && isset($body['academicYear'])){
+        if((!$old||$reactivated) && isset($body['academicYear'])){
             $member=rows('SELECT sm_name FROM sec_member WHERE sm_id=$1',[$smId])[0];
             $result['archiveFolder']=archiveEnsureChairman($smId,requiredText($body,'academicYear',true),(string)$member['sm_name']);
         }
@@ -135,13 +142,10 @@ function deletePeople(string $category,array $body): array
             if(!in_array($category,['chairmen','complex'],true))throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
             $row=lockedRecord('sec_predsedatel_s','id_predsedatel_sc',$id);requireVersion($body,chairState($row));
             if(($row['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');
-            if(pg_num_rows(query('SELECT 1 FROM sec WHERE chairman=$1',[$row['sm_id']]))||pg_num_rows(query('SELECT 1 FROM sec_as WHERE id_predsedatel_sc=$1',[$id])))throw new ApiError(409,'IN_USE','Председатель используется в комиссии или документе. Удаление невозможно.');
-            query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
             query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
-            if($category==='complex')query('DELETE FROM sec_complex WHERE chairman=$1',[$row['sm_id']]);
-            else query('DELETE FROM sec_helper WHERE chairman=$1',[$row['sm_id']]);
-            query('DELETE FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$id]);
+            query('DELETE FROM sec_helper WHERE chairman=$1',[$row['sm_id']]);
+            query('UPDATE sec_predsedatel_s SET area=NULL WHERE id_predsedatel_sc=$1',[$id]);
         }
-        return ['deleted'=>true];
+        return ['deleted'=>true,'deactivated'=>$category!=='external'];
     });
 }

@@ -66,6 +66,7 @@ export function ChairmanCard({
   const [error, setError] = useState("");
   const save = async () => {
     if (busy) return;
+    if (!entry.schoolIds.length) {setError("Выберите хотя бы одну высшую школу.");return;}
     setBusy(true);
     setError("");
     try {
@@ -131,7 +132,6 @@ export function ChairmanCard({
       : [
           ["type_activity", "Вид деятельности"],
           ["career_activity", "Род профессиональной деятельности кандидата"],
-          ["candidate_is", "Кандидат является"],
         ];
   const programIds = entry.programIds ?? [];
   const selectedPrograms = programs.filter((program) =>
@@ -358,19 +358,19 @@ export function ChairmanCard({
             )}
             {section(
               "Образование",
-              "Сведения в соответствии с документом об образовании",
+              "Укажите сведения по диплому. Не забудьте номер и дату его выдачи.",
               <GraduationCap size={19} />,
               <>
                 {input(
                   "university",
                   "Учебное заведение",
-                  "Полное наименование университета",
+                  "Название ВУЗа, номер и дата выдачи диплома об образовании",
                 )}
-                {input("education", "Наименование образования")}
+                {input("education", "Наименование специальности или направления подготовки", "Наименование специальности или направления подготовки по диплому")}
                 {input(
                   "qualification",
                   "Специальность и квалификация",
-                  "В соответствии с дипломом",
+                  "Специальность — …, квалификация — … (в соответствии с дипломом)",
                 )}
               </>,
             )}
@@ -381,7 +381,7 @@ export function ChairmanCard({
               <div className="form-grid three">
                 {input("diplomaSeries", "Серия диплома о степени")}
                 {input("diplomaNumber", "Номер диплома")}
-                {input("diplomaDate", "Дата диплома")}
+                {input("diplomaDate", "Дата выдачи диплома", "ГГГГ-ММ-ДД")}
               </div>,
             )}
             {section(
@@ -396,7 +396,7 @@ export function ChairmanCard({
                 <div className="form-grid three">
                   {input("certificateSeries", "Серия аттестата")}
                   {input("certificateNumber", "Номер аттестата")}
-                  {input("certificateDate", "Дата аттестата")}
+                  {input("certificateDate", "Дата выдачи аттестата", "ГГГГ-ММ-ДД")}
                 </div>
                 {input("honoraryTitle", "Почётное звание", "При наличии")}
               </>,
@@ -412,6 +412,7 @@ export function ChairmanCard({
                   <textarea
                     aria-label={label}
                     rows={4}
+                    placeholder={key === "career_activity" ? "Непосредственный профессиональный функционал или должностные обязанности в структурном подразделении или организации, НИИ, компании или предприятии кандидата" : undefined}
                     value={entry.values[key] ?? ""}
                     onChange={(e) =>
                       onChange({
@@ -422,6 +423,44 @@ export function ChairmanCard({
                   />
                 </Field>
               )),
+            )}
+            {entry.sphere === "Бизнес" && section(
+              "Кандидат является",
+              "Отношение кандидата к работодателю",
+              <UserRound size={18} />,
+              <Field label="Кандидат является">
+                <AppSelect
+                  aria-label="Кандидат является"
+                  disabled={busy}
+                  value={entry.values.candidate_is ?? ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...entry,
+                      values: {
+                        ...entry.values,
+                        candidate_is: e.target.value,
+                      },
+                    })
+                  }
+                >
+                  <option value="">Выберите вариант</option>
+                  <option value="потенциальным работодателем">
+                    Кандидат является потенциальным работодателем
+                  </option>
+                  <option value="представителем работодателя">
+                    Кандидат является представителем работодателя
+                  </option>
+                  {entry.values.candidate_is &&
+                    ![
+                      "потенциальным работодателем",
+                      "представителем работодателя",
+                    ].includes(entry.values.candidate_is) && (
+                      <option value={entry.values.candidate_is} disabled>
+                        {entry.values.candidate_is} (ранее сохранено)
+                      </option>
+                    )}
+                </AppSelect>
+              </Field>,
             )}
           </div>
         </div>
