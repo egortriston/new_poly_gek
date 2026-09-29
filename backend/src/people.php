@@ -136,7 +136,16 @@ function deletePeople(string $category,array $body): array
         if($category==='external'){
             $row=lockedRecord('sec_member','sm_id',$id);requireVersion($body,$row);
             if($row['sm_outer']!=='t')throw new ApiError(409,'INVALID_PERSON','Это внутренний участник.');
-            preventReferencedDelete('sec_member','sm_id',$id,[['sec_sm','sm_id'],['sec_predsedatel_s','sm_id'],['sec_complex','chairman'],['sec_helper','chairman']]);
+            $cardIds=array_column(rows('SELECT id_predsedatel_sc FROM sec_predsedatel_s WHERE sm_id=$1 FOR UPDATE',[$id]),'id_predsedatel_sc');
+            foreach($cardIds as $cardId){
+                query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$cardId]);
+                query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cardId]);
+            }
+            query('DELETE FROM sec_helper WHERE chairman=$1',[$id]);
+            query('DELETE FROM sec_complex WHERE chairman=$1',[$id]);
+            query('DELETE FROM sec_predsedatel_s WHERE sm_id=$1',[$id]);
+            query('DELETE FROM sec_sm WHERE sm_id=$1',[$id]);
+            query('UPDATE sec SET chairman=NULL WHERE chairman=$1',[$id]);
             query('DELETE FROM sec_member WHERE sm_id=$1',[$id]);
         }else{
             if(!in_array($category,['chairmen','complex'],true))throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
