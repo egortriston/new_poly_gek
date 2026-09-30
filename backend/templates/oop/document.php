@@ -239,7 +239,7 @@ $html='
         </tr>
         <tr>
             <td width="230" valign="top">
-                    Директор ИПМЭиТ
+                    И.о. директора ИПМЭиТ
             </td>
             <td width="14" valign="top">
 
@@ -251,7 +251,7 @@ $html='
 
             </td>
             <td width="172" valign="bottom" align="center">
-                    В.Э. Щепинин
+                    А.А. Евграфов
             </td>
         </tr>
         <tr>

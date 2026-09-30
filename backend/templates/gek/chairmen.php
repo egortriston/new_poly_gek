@@ -306,14 +306,14 @@ normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><spa
 normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><b><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">СОГЛАСОВАНО:</span></b></p>
 
 <p class="MsoNormal" style="margin:0cm;text-align:justify;line-height:
-normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">Директор института</span></p>
+normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">И.о. директора ИПМЭиТ</span></p>
 
 <p class="MsoNormal" style="margin:0cm;text-align:justify;line-height:
-normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">промышленного менеджмента,</span></p>
+normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">&nbsp;</span></p>
 
 <p class="MsoNormal" style="margin:0cm;text-align:justify;line-height:
-normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">экономики и
-торговли&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /В.Э. Щепинин/</span></p>
+normal;punctuation-wrap:simple;text-autospace:none;vertical-align:baseline"><span style="font-size:14.0pt;font-family:&quot;Times New Roman&quot;,serif">&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /А.А. Евграфов/</span></p>
 
 <p class="MsoNormal" align="right" style="margin-top:0cm;margin-right:9.0pt;
 margin:0cm;margin-left:0cm;text-align:right;line-height:normal;

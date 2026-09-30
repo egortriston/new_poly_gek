@@ -35,7 +35,7 @@ $signatures=$schoolId===null ? rows("SELECT short,chief_role,chief FROM school W
 foreach($signatures as $signature): ?>
 <table class="signatures"><tr><td style="width:44%"><?= $escape($signature['chief_role']?:'Директор') ?> <?= $escape($signature['short']) ?></td><td style="width:18%">___________</td><td style="text-align:right">/<?= $escape($signature['chief']) ?>/</td></tr></table><div class="gap"></div>
 <?php endforeach; ?>
-<p><b>СОГЛАСОВАНО:</b><br>Директор института<br>промышленного менеджмента,</p>
-<table class="signatures"><tr><td>экономики и торговли</td><td style="text-align:right">/В.Э. Щепинин/</td></tr></table>
+<p><b>СОГЛАСОВАНО:</b><br>И.о. директора ИПМЭиТ</p>
+<table class="signatures"><tr><td></td><td style="text-align:right">/А.А. Евграфов/</td></tr></table>
 <div style="height:38pt"></div><p style="text-align:right;font-size:10.86pt">«___»___________<?= $escape($printYear) ?> г.</p>
 </body></html>

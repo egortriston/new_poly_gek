@@ -473,9 +473,9 @@ line-height:135%"> </span></p>
 background:transparent"><span style="font-size:13.0pt;line-height:135%">&nbsp;</span></p>
 
 <p class="MsoNormal" style="margin-bottom:0cm;text-align:justify;text-indent:
-35.45pt;line-height:normal"><span style="font-size:13.0pt;font-family:&quot;Times New Roman&quot;,serif">Директор
-Института ПМЭиТ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;___________________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-/<u>В.Э. Щепинин</u>/</span></p>
+ 35.45pt;line-height:normal"><span style="font-size:13.0pt;font-family:&quot;Times New Roman&quot;,serif">И.о. директора
+ ИПМЭиТ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;___________________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ /<u>А.А. Евграфов</u>/</span></p>
 
 <p class="MsoNormal" style="margin-bottom:0cm;text-align:justify;text-indent:
 35.45pt;line-height:normal"><span style="font-size:13.0pt;font-family:&quot;Times New Roman&quot;,serif">&nbsp;</span></p>

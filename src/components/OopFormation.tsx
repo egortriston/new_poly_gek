@@ -344,8 +344,8 @@ function FormationEditor({
                       resolved("chief_program"),
                     ],
                     [
-                      server.signature.chief_position || "Директор ИПМЭиТ",
-                      server.signature.chief || "В.Э. Щепинин",
+                      server.signature.chief_position || "И.о. директора ИПМЭиТ",
+                      server.signature.chief || "А.А. Евграфов",
                     ],
                     ["Руководитель ДООП", "Н.Ю. Гращенко"],
                   ].map(([role, name]) => (

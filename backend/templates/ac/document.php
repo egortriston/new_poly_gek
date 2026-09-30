@@ -19,8 +19,8 @@ if(!empty($schoolId)){
 
 } 
 
-  $chief_role = !empty($id_school_get) ? spoPrintRow(spoPrintQuery($conn, "SELECT * FROM school WHERE id_school = $id_school_get"))['chief_role'] : "Директор ИПМЭиТ";
-  $chief = !empty($id_school_get) ? spoPrintRow(spoPrintQuery($conn, "SELECT * FROM school WHERE id_school = $id_school_get"))['chief'] : "В.Э. Щепинин";
+  $chief_role = !empty($id_school_get) ? spoPrintRow(spoPrintQuery($conn, "SELECT * FROM school WHERE id_school = $id_school_get"))['chief_role'] : "И.о. директора ИПМЭиТ";
+  $chief = !empty($id_school_get) ? spoPrintRow(spoPrintQuery($conn, "SELECT * FROM school WHERE id_school = $id_school_get"))['chief'] : "А.А. Евграфов";
   $short = !empty($id_school_get) ? spoPrintRow(spoPrintQuery($conn, "SELECT * FROM school WHERE id_school = $id_school_get"))['short'] : "";
 $cover_row = $cover_row ?: array_fill_keys(['num','cover_date','num_add','cover_date_add','cover_year','caps'], '');
 $num = $cover_row['num'];
@@ -52,8 +52,8 @@ $mpdf->AddPage('P','','','','on');
 </head>
 <body>
 <p class="leftstr indent"><img src="'.__DIR__.'/../spo/title.jpg" width="300" height="298">';
-$html.= !empty($id_school_get ) ? '<p class="rightstr">Директору ИПМЭиТ
-<br>Щепинину В.Э' : '<p class="rightstr"></p></p>';
+$html.= !empty($id_school_get ) ? '<p class="rightstr">И.о. директора ИПМЭиТ
+<br>Евграфову А.А.' : '<p class="rightstr"></p></p>';
 $html.=$caps;
 
 $doc_type = empty($id_school_get) ? '<p class="com_break form-group rspr"><strong>РАСПОРЯЖЕНИЕ' : '<p class="com_break form-group indent"><strong>СЛУЖЕБНАЯ ЗАПИСКА';
