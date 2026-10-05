@@ -67,7 +67,8 @@ function gekSnapshot(string $period='2026/2027'): array
     $schools=rows('SELECT id_school AS id, name_school AS name, short FROM school ORDER BY id_school');
     $people=array_map(function($member){
         $person=personFromMember($member);
-        $profile=rows('SELECT id_predsedatel_sc FROM sec_predsedatel_s WHERE sm_id=$1',[$member['sm_id']])[0]??null;
+        $profile=rows('SELECT * FROM sec_predsedatel_s WHERE sm_id=$1',[$member['sm_id']])[0]??null;
+        $person['chairmanSchoolIds']=$profile && trim($profile['area']??'')!=='' ? chairState($profile)['schools'] : [];
         if($profile)$person['chairmanProgramIds']=array_column(rows('SELECT p.id_mep::text AS id_mep FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1 ORDER BY p.id_program,p.id_mep',[$profile['id_predsedatel_sc']]),'id_mep');
         return $person;
     }, rows('SELECT * FROM sec_member ORDER BY sm_name, sm_id'));
@@ -112,6 +113,12 @@ function saveGek(array $body): array
         $chairman=gekId(requiredText($body,'chairmanId'),'member:');
         $secretary=gekId(requiredText($body,'secretaryId'),'teacher:');
         referenceExists('sec_member','sm_id',$chairman);
+        // Retain existing appointments, including withdrawn cards, until explicitly changed.
+        if($chairman && (!$old || $old['chairman']!==$chairman || $old['id_school']!==$school)) {
+            $appointment=rows("SELECT * FROM sec_predsedatel_s WHERE sm_id=$1 AND area IS NOT NULL AND btrim(area)<>''",[$chairman])[0]??null;
+            if(!$appointment || !in_array($school,chairState($appointment)['schools'],true))
+                throw new ApiError(422,'CHAIRMAN_SCHOOL','Выберите председателя, назначенного на высшую школу комиссии.');
+        }
         referenceExists('teacher','id_teacher',$secretary);
         $links=[];
         foreach(GEK_LINKS as $key=>[$table,$column,$ref,$pk,$prefix]) {

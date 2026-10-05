@@ -5,9 +5,24 @@ require dirname(__DIR__).'/src/lists.php';
 require dirname(__DIR__).'/src/gek.php';
 $person=savePeople('external',['person'=>['name'=>'Председатель Тестовый']])['id'];
 $other=savePeople('external',['person'=>['name'=>'Участник Тестовый']])['id'];
+$appointment=savePeople('chairmen',['personId'=>'member:'.$person,'sphere'=>'Бизнес','schoolIds'=>[$school],'values'=>[]])['id'];
 $body=['number'=>'123','school'=>$school,'chairmanId'=>'member:'.$person,'secretaryId'=>'teacher:'.$teacher,
     'internalIds'=>[],'externalIds'=>['member:'.$other],'programIds'=>[]];
 $saved=saveGek($body);
+expectError('CHAIRMAN_SCHOOL',fn()=>saveGek([...$body,'school'=>$school2]));
+expectError('CHAIRMAN_SCHOOL',fn()=>saveGek([...$body,'number'=>'25','chairmanId'=>'member:'.$other,'externalIds'=>[]]));
+// Complex chairmen are available to every school explicitly selected in their card.
+$complexPerson=savePeople('external',['person'=>['name'=>'Комплексный Тестовый']])['id'];
+savePeople('complex',['personId'=>'member:'.$complexPerson,'sphere'=>'Образование','schoolIds'=>[$school,$school2],'values'=>[]]);
+foreach([$school,$school2] as $complexSchool) {
+    $complexCommission=saveGek([...$body,'number'=>'26','school'=>$complexSchool,'chairmanId'=>'member:'.$complexPerson]);
+    deleteGek($complexCommission);
+}
+// Withdrawing an appointment must not block unrelated edits to an existing commission.
+query('UPDATE sec_predsedatel_s SET area=NULL WHERE id_predsedatel_sc=$1',[$appointment]);
+query('DELETE FROM sec_helper WHERE chairman=$1',[$person]);
+$saved=saveGek($saved);
+expectError('CHAIRMAN_SCHOOL',fn()=>saveGek([...$body,'number'=>'27']));
 check(normalizeGekId('2','1')==='102','Missing prefix is normalized');
 check(normalizeGekId('102','2')==='202','School prefix is corrected');
 expectError('VALIDATION',fn()=>normalizeGekId('100','1'));
