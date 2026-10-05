@@ -6,12 +6,13 @@ require dirname(__DIR__) . '/src/archive.php';
 require dirname(__DIR__) . '/src/chairman-print.php';
 
 foreach (['Бизнес'=>'chairmen', 'Образование'=>'complex'] as $sphere=>$category) {
-    $person = savePeople('external', ['person'=>['name'=>'Тестов Иван Иванович', 'organization'=>'Организация <тест> & партнёры']])['id'];
+    $person = savePeople('external', ['person'=>['name'=>'Сафаров Гасан Гусейн оглы', 'organization'=>'Организация <тест> & партнёры']])['id'];
     $id = savePeople($category, ['personId'=>'member:'.$person, 'sphere'=>$sphere, 'schoolIds'=>[$school],
         'values'=>['publications'=>'Публикации тест', 'career_activity'=>'Практика тест']])['id'];
     query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)', [$id, '01.03.05_02']);
     $input = ['id'=>$id, 'school'=>$school, 'academicYear'=>'2027/2028'];
     $document = chairmanPrint($category, $input);
+    check(str_contains($document['html'], 'Гусейн оглы'), 'Compound patronymic is printed in full');
     check(str_contains($document['html'], '2028 год'), 'Academic period controls printed year');
     check(str_contains($document['html'], 'Организация &lt;тест&gt; &amp; партнёры'), 'Data is escaped');
     check(str_contains($document['html'], '01.03.05_02'), 'Linked programs are printed');

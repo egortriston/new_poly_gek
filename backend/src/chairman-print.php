@@ -6,6 +6,13 @@ function printEscape(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+/** Keep a multi-word patronymic intact in the three fields of the printed form. */
+function chairmanPrintNameParts(string $name): array
+{
+    $name = trim(preg_replace('/\s+/u', ' ', $name));
+    return array_pad(explode(' ', $name, 3), 3, '');
+}
+
 function chairmanPdf(string|array $documents): string
 {
     require_once dirname(__DIR__) . '/vendor/autoload.php';
@@ -142,7 +149,7 @@ function chairmanPrint(string $category, array $input): array
             default => throw new ApiError(422, 'VALIDATION', 'Укажите сферу деятельности в карточке председателя.'),
         };
         $name_school = implode(', ', array_column($printSchools, 'name_school'));
-        [$surname, $first_name, $otchestvo] = array_pad(explode(' ', $member['sm_name']), 3, '');
+        [$surname, $first_name, $otchestvo] = chairmanPrintNameParts($member['sm_name']);
         $memberValue = static function (string $field, string $table) use ($member, $chair): string {
             $primary = $table === 'sec_member' ? $member : $chair;
             $fallback = $table === 'sec_member' ? $chair : $member;
