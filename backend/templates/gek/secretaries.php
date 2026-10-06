@@ -91,7 +91,7 @@ $header = '<header style="font-size:12PT">
 секретарей ГЭК по образовательным программам высшего образования
 <u></u>
 <br>
-    на '.$printYear.' год
+    на '.$titleYear.' год
 </p>
 <p class="center">
     <strong>
@@ -211,7 +211,7 @@ $html.='<p class = "leftstr">
 __________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/А.А. Евграфов/
 <br>
 <br>
-   «___»___________'.$printYear.' г.
+   «___»___________'.$signatureYear.' г.
 </p><p class="center"></body>
 </html>';
 

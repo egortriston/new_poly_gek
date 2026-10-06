@@ -4,6 +4,7 @@ import { api } from "../api";
 import type { Entry } from "../pages/PeopleTable";
 import { Modal } from "./ui";
 import { useStore } from "../store";
+import { PrintYears } from "./PrintYears";
 
 export function ChairmanPrint({ entry, category, onClose }: {
   entry: Entry;
@@ -11,6 +12,10 @@ export function ChairmanPrint({ entry, category, onClose }: {
   onClose: () => void;
 }) {
   const { year } = useStore();
+  const defaultYear = Number(year) + 1;
+  const [titleYear, setTitleYear] = useState(String(defaultYear));
+  const [signatureYear, setSignatureYear] = useState(String(defaultYear));
+  useEffect(() => { setTitleYear(String(defaultYear)); setSignatureYear(String(defaultYear)); }, [defaultYear]);
   const [pdfUrl, setPdfUrl] = useState("");
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -22,7 +27,7 @@ export function ChairmanPrint({ entry, category, onClose }: {
     setLoaded(false);
     const controller = new AbortController();
     let objectUrl = "";
-    api<{ pdf: string }>(`/people/${category}/print?` + new URLSearchParams({ id: entry.id, academicYear: `${year}/${Number(year) + 1}` }), undefined, controller.signal)
+    api<{ pdf: string }>(`/people/${category}/print?` + new URLSearchParams({ id: entry.id, academicYear: `${year}/${defaultYear}`, titleYear, signatureYear }), undefined, controller.signal)
       .then(result => {
         if (controller.signal.aborted) return;
         const bytes = Uint8Array.from(atob(result.pdf), character => character.charCodeAt(0));
@@ -31,7 +36,7 @@ export function ChairmanPrint({ entry, category, onClose }: {
       })
       .catch(reason => { if (!controller.signal.aborted) setError(reason.message); });
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [category, entry.id, year]);
+  }, [category, entry.id, year, defaultYear, titleYear, signatureYear]);
 
   return <Modal title="Обоснование кандидатуры председателя ГЭК" subtitle={entry.person?.name}
     wide onClose={onClose} footer={<>
@@ -46,6 +51,7 @@ export function ChairmanPrint({ entry, category, onClose }: {
         }
       }}><Printer size={16} />Печать</button>
     </>}>
+    <PrintYears defaultYear={defaultYear} titleYear={titleYear} signatureYear={signatureYear} onTitleYear={setTitleYear} onSignatureYear={setSignatureYear}/>
     {error && <p className="form-error" role="alert">{error}</p>}
     {!pdfUrl && !error && <p className="muted" role="status">Подготовка печатной формы…</p>}
     {pdfUrl && <iframe ref={frame} title="Печатная форма председателя ГЭК" className="chairman-print-frame"

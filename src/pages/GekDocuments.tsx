@@ -5,9 +5,14 @@ import { useGek } from '../data/gek';
 import { AppSelect } from '../components/AppSelect';
 import { PageTitle } from '../components/PageTitle';
 import { GekPdfPreview, type GekDocumentKind } from '../components/GekPdfPreview';
+import { PrintYears } from '../components/PrintYears';
 
 export function GekDocuments() {
   const {commissions,schools,numberingStart,updateNumbering,year}=useGek();
+ const defaultYear=Number(year)+1;
+ const [titleYear,setTitleYear]=useState(String(defaultYear));
+ const [signatureYear,setSignatureYear]=useState(String(defaultYear));
+ useEffect(()=>{setTitleYear(String(defaultYear));setSignatureYear(String(defaultYear));},[defaultYear]);
  const [start,setStart]=useState(String(numberingStart));
  const [numberError,setNumberError]=useState('');
  const [saving,setSaving]=useState(false);
@@ -39,6 +44,7 @@ export function GekDocuments() {
     <Link className="text-button" to="/gek">Комиссии ГЭК /</Link>
     <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p></div>
     <div className="gek-print-settings">
+      <PrintYears defaultYear={defaultYear} titleYear={titleYear} signatureYear={signatureYear} onTitleYear={setTitleYear} onSignatureYear={setSignatureYear}/>
       <label className="gek-numbering">Начать нумерацию ГЭК с<input aria-label="Начать нумерацию ГЭК с" aria-invalid={!!numberError} aria-describedby={numberError?'gek-numbering-error':undefined} disabled={saving} type="number" min="1" max="9999" value={start} onChange={e=>{setStart(e.target.value);setNumberError('');}}/></label>
       <label className="document-school">Высшая школа<AppSelect disabled={saving} value={school} onChange={e=>setSchool(e.target.value)}><option value="">Выберите высшую школу</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</AppSelect></label>
       {numberError && <p id="gek-numbering-error" role="alert" className="form-error">{numberError}</p>}
@@ -48,6 +54,6 @@ export function GekDocuments() {
       <div className="button-row"><button className="button primary" disabled={saving || !school || (doc.kind!=='chairmen'&&!hasSelected)} onClick={()=>void openPrint(doc.kind,school)}>По выбранной школе</button>
       <button className="button secondary" disabled={saving || (doc.kind!=='chairmen'&&!commissions.length)} onClick={()=>void openPrint(doc.kind,'')}>По всем школам</button></div></div>
     </section>)}</div>
-    {preview && <GekPdfPreview {...preview} onClose={()=>setPreview(null)}/>}
+    {preview && <GekPdfPreview {...preview} titleYear={titleYear} signatureYear={signatureYear} onClose={()=>setPreview(null)}/>}
   </div>;
 }

@@ -131,7 +131,7 @@ avoid;background:transparent">&nbsp;</p>
 
 <p class="30" style="margin-top:0cm;margin-right:0cm;margin-bottom:0cm;
 margin-left:1.15pt;line-height:normal;background:transparent" align="center"><span style="font-size:14.0pt; font-weight: bold">выбора кандидатуры председателя Государственных
-экзаменационных комиссий на <?php echo $printYear; ?> год </span></p>
+экзаменационных комиссий на <?php echo $titleYear; ?> год </span></p>
 
 <div align="center">
 
@@ -141,7 +141,7 @@ margin-left:1.15pt;line-height:normal;background:transparent" align="center"><sp
     padding:1.5pt 1.5pt 1.5pt 1.5pt;height:1.0pt">
     <p class="MsoNormal" align="center" style="margin-bottom:0cm;text-align:center;
     line-height:normal"><b><span style="font-size:12.0pt;font-family:&quot;Arial&quot;,sans-serif">ГЭК
-    <?php echo $printYear; ?></span></b></p>
+    <?php echo $signatureYear; ?></span></b></p>
     </td>
     </tr>
     <tr style="page-break-inside:avoid;height:1.0pt">

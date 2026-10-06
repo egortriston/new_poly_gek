@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/print-years.php';
 
 function remove_dubs(?string $value): string
 {
@@ -48,6 +49,8 @@ function gekPrint(array $input): string
     if($schoolId!==null && !ctype_digit($schoolId)) throw new ApiError(422,'VALIDATION','Некорректная высшая школа.');
     referenceExists('school','id_school',$schoolId);
     $printYear=archiveYear(requiredText($input,'academicYear',true));
+    $titleYear=selectedPrintYear($input,'titleYear',$printYear);
+    $signatureYear=selectedPrintYear($input,'signatureYear',$printYear);
     $gekPrintStart=gekNumbering($input['academicYear']);
     $gekPrintPrefix='37'.substr($printYear,-2);
     $ids=$input['ids']??[];
@@ -56,6 +59,24 @@ function gekPrint(array $input): string
     $gekPrintIds=array_values(array_unique($ids));
     $countSql='SELECT count(*) FROM sec_info'.($schoolId!==null?' WHERE id_school='.(int)$schoolId:'');
     if($kind!=='chairmen' && (int)pg_fetch_result(gekPrintQuery(database(),$countSql),0,0)===0) throw new ApiError(422,'EMPTY_SELECTION','Нет комиссий для печати.');
+    if($kind==='secretaries') {
+        $conditions=[];
+        if($schoolId!==null)$conditions[]='si.id_school='.(int)$schoolId;
+        if($gekPrintIds)$conditions[]='si.id_sec IN ('.implode(',',$gekPrintIds).')';
+        $scope=$conditions?' WHERE '.implode(' AND ',$conditions):'';
+        $incomplete=rows('SELECT si.id_com_sec, s.short AS school,
+            (si.chairman IS NULL OR NULLIF(btrim(si.name_chairman), \'\') IS NULL) AS missing_chairman,
+            (si.secretary IS NULL OR NULLIF(btrim(si.name_secretary), \'\') IS NULL) AS missing_secretary
+            FROM sec_info si LEFT JOIN school s ON s.id_school=si.id_school'.$scope.' ORDER BY si.id_com_sec');
+        $problems=[];
+        foreach($incomplete as $row) {
+            $missing=[];
+            if($row['missing_chairman']==='t')$missing[]='председателя';
+            if($row['missing_secretary']==='t')$missing[]='секретаря';
+            if($missing)$problems[]='ГЭК ID '.$row['id_com_sec'].' ('.($row['school']?:'школа не указана').'): назначьте '.implode(' и ',$missing);
+        }
+        if($problems)throw new ApiError(422,'INCOMPLETE_COMMISSION','Печать секретарей невозможна. '.implode('; ',array_slice($problems,0,3)).(count($problems)>3?'; и ещё '.(count($problems)-3).' комиссий':'').'.');
+    }
     $conn=database();
     if ($kind === 'chairmen') {
         $gekSchoolId=$schoolId;

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/print-years.php';
 
 function printEscape(?string $value): string
 {
@@ -125,6 +126,8 @@ function chairmanPrint(string $category, array $input): array
     return readList(function () use ($category, $input) {
         $id = requiredText($input, 'id', true);
         $printYear = archiveYear(requiredText($input, 'academicYear', true));
+        $titleYear = selectedPrintYear($input, 'titleYear', $printYear);
+        $signatureYear = selectedPrintYear($input, 'signatureYear', $printYear);
         $chair = rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1', [$id])[0] ?? null;
         if (!$chair || ($chair['complex'] === 't') !== ($category === 'complex')) {
             throw new ApiError(404, 'NOT_FOUND', 'Карточка председателя не найдена.');

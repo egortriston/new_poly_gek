@@ -14,6 +14,10 @@ foreach (['Бизнес'=>'chairmen', 'Образование'=>'complex'] as $s
     $document = chairmanPrint($category, $input);
     check(str_contains($document['html'], 'Гусейн оглы'), 'Compound patronymic is printed in full');
     check(str_contains($document['html'], '2028 год'), 'Academic period controls printed year');
+    $changedYears = chairmanPrint($category, [...$input, 'titleYear'=>'2027', 'signatureYear'=>'2029']);
+    check(str_contains($changedYears['html'], '2027 год'), 'Title year can be changed');
+    check(str_contains($changedYears['html'], '2029'), 'Signature year can be changed separately');
+    expectError('INVALID_PRINT_YEAR', fn()=>chairmanPrint($category, [...$input, 'titleYear'=>'1900']));
     check(str_contains($document['html'], 'Организация &lt;тест&gt; &amp; партнёры'), 'Data is escaped');
     check(str_contains($document['html'], '01.03.05_02'), 'Linked programs are printed');
     check(str_contains($document['html'], $sphere==='Бизнес'?'Практика тест':'Публикации тест'), 'Sphere-specific fields are printed');

@@ -5,7 +5,7 @@ import { useStore } from '../store';
 import { Modal } from './ui';
 
 export type GekDocumentKind = 'commissions' | 'secretaries' | 'chairmen';
-export function GekPdfPreview({kind,school='',ids=[],onClose}:{kind:GekDocumentKind;school?:string;ids?:string[];onClose:()=>void}) {
+export function GekPdfPreview({kind,school='',ids=[],titleYear,signatureYear,onClose}:{kind:GekDocumentKind;school?:string;ids?:string[];titleYear?:string;signatureYear?:string;onClose:()=>void}) {
   const {year}=useStore();
   const [url,setUrl]=useState('');
   const [error,setError]=useState('');
@@ -16,14 +16,14 @@ export function GekPdfPreview({kind,school='',ids=[],onClose}:{kind:GekDocumentK
     const controller=new AbortController();
     let objectUrl='';
     setUrl('');setError('');
-    api<{pdf:string}>('/gek/print',{kind,school,ids:JSON.parse(selection),academicYear:`${year}/${Number(year)+1}`},controller.signal)
+    api<{pdf:string}>('/gek/print',{kind,school,ids:JSON.parse(selection),academicYear:`${year}/${Number(year)+1}`,titleYear:titleYear??String(Number(year)+1),signatureYear:signatureYear??String(Number(year)+1)},controller.signal)
       .then(result=>{
         if(controller.signal.aborted)return;
         objectUrl=URL.createObjectURL(new Blob([Uint8Array.from(atob(result.pdf),c=>c.charCodeAt(0))],{type:'application/pdf'}));
         setUrl(objectUrl);
       }).catch(reason=>{if(!controller.signal.aborted)setError(reason.message);});
     return ()=>{controller.abort();if(objectUrl)URL.revokeObjectURL(objectUrl);};
-  },[kind,school,selection,year]);
+  },[kind,school,selection,year,titleYear,signatureYear]);
   return <Modal title={title} subtitle="Предпросмотр сохранённых сведений" wide onClose={onClose} footer={<>
     <button className="button secondary" onClick={onClose}>Закрыть</button>
     {url && <a className="button secondary" download={`${title}.pdf`} href={url}><Download size={16}/>Скачать PDF</a>}

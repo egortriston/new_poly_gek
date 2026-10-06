@@ -20,7 +20,7 @@ table.signatures td {padding:0;vertical-align:bottom;}
 <p class="appendix">Приложение 3<br>к информационному письму</p>
 <p class="heading"><b>Федеральное государственное автономное образовательное учреждение<br>высшего образования<br>«Санкт-Петербургский политехнический университет Петра Великого»</b></p>
 <div class="gap"></div>
-<p class="heading">СОСТАВ<br>председателей ГЭК по образовательным программам высшего образования<br>на <?= $escape($printYear) ?> год</p>
+<p class="heading">СОСТАВ<br>председателей ГЭК по образовательным программам высшего образования<br>на <?= $escape($titleYear) ?> год</p>
 <div class="gap"></div>
 <p class="heading"><b><?= $schoolId===null?'ПО ИНСТИТУТУ ПРОМЫШЛЕННОГО МЕНЕДЖМЕНТА,<br>ЭКОНОМИКИ И ТОРГОВЛИ':$escape(mb_strtoupper(getMemberName($conn,'name_school'))) ?></b></p>
 <table class="list"><tbody><tr><td class="index"><i>№<br>п/п</i></td><td class="name" style="text-align:center"><i>Фамилия имя отчество председателя ГЭК</i></td><td class="direction" style="text-align:center"><i>Направление подготовки</i></td></tr>
@@ -37,5 +37,5 @@ foreach($signatures as $signature): ?>
 <?php endforeach; ?>
 <p><b>СОГЛАСОВАНО:</b><br>И.о. директора ИПМЭиТ</p>
 <table class="signatures"><tr><td></td><td style="text-align:right">/А.А. Евграфов/</td></tr></table>
-<div style="height:38pt"></div><p style="text-align:right;font-size:10.86pt">«___»___________<?= $escape($printYear) ?> г.</p>
+<div style="height:38pt"></div><p style="text-align:right;font-size:10.86pt">«___»___________<?= $escape($signatureYear) ?> г.</p>
 </body></html>
