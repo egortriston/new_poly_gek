@@ -301,6 +301,9 @@
 .print-years {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px;max-width:550px;}
 .print-years label {display:grid;gap:10px;min-width:0;font-size:13px;font-weight:550;color:#405238;}
 .print-years .app-select {width:100%;min-height:44px;background:#fff;font-weight:400;}
+.chairman-print-year {display:grid;gap:9px;max-width:265px;margin-bottom:20px;font-size:13px;font-weight:550;color:#405238;}
+.chairman-print-year .app-select {width:100%;min-height:44px;background:#fff;font-weight:400;}
+.chairman-print-year small {font-size:11px;font-weight:400;color:#788475;}
 .gek-print-settings>.print-years {grid-column:1/-1;margin-bottom:0;}
 .gek-print-settings .gek-numbering,.gek-print-settings .document-school {display:grid;gap:10px;margin:0;max-width:none;min-width:0;font-size:13px;font-weight:550;}
 .gek-numbering input {width:100%;min-height:44px;padding:11px 12px;border:1px solid #d8e1d5;border-radius:8px;background:white;font:inherit;}
