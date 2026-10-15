@@ -78,7 +78,7 @@ function preventReferencedDelete(string $table,string $pk,string $id,array $extr
 function catalogExtras(string $kind): array
 {
     return match($kind){
-        'schools'=>[['sec_helper','id_school'],['sec_complex_sc','id_school']],
+        'schools'=>[['sec_chair_school','id_school'],['sec_helper','id_school'],['sec_complex_sc','id_school']],
         'teachers'=>[['sec_member','employee_number'],['sec_teacher','id_teacher'],['sec','secretary'],['spo','chairman'],['spo','secretary'],['certification','chairman']],
         'programs'=>[['sec_mep','id_mep'],['spo_mep','id_mep'],['mep_status','id_mep'],['tasks_mep_3','id_mep']],
         default=>[],

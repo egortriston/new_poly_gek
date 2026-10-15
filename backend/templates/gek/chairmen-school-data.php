@@ -13,15 +13,11 @@ function getMemberName($conn, $name) {
         }
     return null; 
 }
-$query = "SELECT sec_member.sm_name, sec_predsedatel_s.id_predsedatel_sc FROM sec_helper
-JOIN sec_member ON sec_helper.chairman = sec_member.sm_id
-JOIN sec_predsedatel_s ON sec_member.sm_id = sec_predsedatel_s.sm_id
-WHERE sec_helper.id_school = \$1
-UNION 
-SELECT sec_member.sm_name, sec_complex_sc.id_predsedatel_sc FROM sec_complex_sc
-JOIN sec_predsedatel_s ON sec_complex_sc.id_predsedatel_sc = sec_predsedatel_s.id_predsedatel_sc
+$query = "SELECT sec_member.sm_name, sec_predsedatel_s.id_predsedatel_sc
+FROM sec_chair_school
+JOIN sec_predsedatel_s ON sec_chair_school.id_predsedatel_sc = sec_predsedatel_s.id_predsedatel_sc
 JOIN sec_member ON sec_predsedatel_s.sm_id = sec_member.sm_id
-WHERE sec_complex_sc.id_school = \$1";
+WHERE sec_chair_school.id_school = \$1";
 $result = pg_query_params($conn, $query, array($schoolId));
 $resultArray = array();
 

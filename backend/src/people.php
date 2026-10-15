@@ -15,8 +15,7 @@ function personFromMember(array $row): array
 }
 function chairState(array $row): array
 {
-    $complex=$row['complex']==='t';
-    $schools=$complex?rows('SELECT id_school FROM sec_complex_sc WHERE id_predsedatel_sc=$1 ORDER BY id_school',[$row['id_predsedatel_sc']]):rows('SELECT id_school FROM sec_helper WHERE chairman=$1 ORDER BY id_school',[$row['sm_id']]);
+    $schools=rows('SELECT id_school FROM sec_chair_school WHERE id_predsedatel_sc=$1 ORDER BY id_school',[$row['id_predsedatel_sc']]);
     $programs=rows('SELECT p.id_mep::text AS id_mep, p.id_direction::text AS id_direction FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1 ORDER BY p.id_program,p.id_mep',[$row['id_predsedatel_sc']]);
     return ['record'=>$row,'schools'=>array_column($schools,'id_school'),'programs'=>array_column($programs,'id_mep'),'directions'=>array_values(array_unique(array_column($programs,'id_direction')))];
 }
@@ -107,6 +106,8 @@ function savePeople(string $category,array $body): array
             query('DELETE FROM sec_helper WHERE chairman=$1',[$smId]);
             insertRecord('sec_helper',['chairman'=>$smId,'id_school'=>$schools[0]],'id_sec');
         }
+        query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$id]);
+        foreach($schools as $school)query('INSERT INTO sec_chair_school(id_predsedatel_sc,id_school) VALUES($1,$2)',[$id,$school]);
         $result=['id'=>$id];
         if((!$old||$reactivated) && isset($body['academicYear'])){
             $member=rows('SELECT sm_name FROM sec_member WHERE sm_id=$1',[$smId])[0];
@@ -139,6 +140,7 @@ function deletePeople(string $category,array $body): array
             $cardIds=array_column(rows('SELECT id_predsedatel_sc FROM sec_predsedatel_s WHERE sm_id=$1 FOR UPDATE',[$id]),'id_predsedatel_sc');
             foreach($cardIds as $cardId){
                 query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$cardId]);
+                query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$cardId]);
                 query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cardId]);
             }
             query('DELETE FROM sec_helper WHERE chairman=$1',[$id]);
@@ -153,6 +155,7 @@ function deletePeople(string $category,array $body): array
             if(($row['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');
             query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
             query('DELETE FROM sec_helper WHERE chairman=$1',[$row['sm_id']]);
+            query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$id]);
             query('UPDATE sec_predsedatel_s SET area=NULL WHERE id_predsedatel_sc=$1',[$id]);
         }
         return ['deleted'=>true,'deactivated'=>$category!=='external'];

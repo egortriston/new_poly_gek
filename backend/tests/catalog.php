@@ -28,6 +28,11 @@ foreach($foreignKeys as $fk) {
     $definition=str_replace('REFERENCES public.','REFERENCES pg_temp.',$fk['definition']);
     query("ALTER TABLE pg_temp.$table ADD $definition");
 }
+if(!in_array('sec_chair_school',array_column($tables,'tablename'),true))
+    query('CREATE TEMP TABLE sec_chair_school (
+        id_predsedatel_sc integer NOT NULL REFERENCES pg_temp.sec_predsedatel_s(id_predsedatel_sc),
+        id_school integer NOT NULL REFERENCES pg_temp.school(id_school),
+        PRIMARY KEY(id_predsedatel_sc,id_school))');
 function check(bool $condition,string $message): void {if(!$condition)throw new RuntimeException($message);}
 function expectError(string $code,callable $operation): void {
     try {$operation();} catch(ApiError $error) {check($error->errorCode===$code,"Expected $code, got ".$error->errorCode);return;}
@@ -70,6 +75,7 @@ $old=cardRow('chairmen',$chair);
 savePeople('chairmen',[...$old,'schoolIds'=>[$school2],'values'=>['career_activity'=>'Новая практика']]);
 $new=cardRow('chairmen',$chair);
 check($new['schoolIds']===[$school2],'School association must be replaced');
+check(count(rows('SELECT 1 FROM sec_chair_school WHERE id_predsedatel_sc=$1 AND id_school=$2',[$chair,$school2]))===1,'Unified chairman school link is saved');
 check($new['values']['publications']==='Сохранённые сведения','Omitted sphere fields must survive');
 expectError('STALE_RECORD',fn()=>savePeople('chairmen',$old));
 expectError('INVALID_REFERENCE',fn()=>savePeople('chairmen',[...$new,'schoolIds'=>['99999']]));
@@ -91,6 +97,7 @@ deletePeople('chairmen',cardRow('chairmen',$chair));
 check(count(peopleSnapshot()['entries']['chairmen'])===0,'Deactivated chairman must leave active list');
 check(rows('SELECT area FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair])[0]['area']===null,'Deactivation clears sphere');
 check(count(rows('SELECT * FROM sec_helper WHERE chairman=$1',[$external]))===0,'Deactivation clears regular school links');
+check(count(rows('SELECT * FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$chair]))===0,'Deactivation clears unified school links');
 check(count(rows('SELECT * FROM sec WHERE chairman=$1',[$external]))===1,'Deactivation keeps existing GEC assignments');
 check(count(rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair]))===1,'Deactivation keeps professional card');
 $restored=savePeople('chairmen',['personId'=>'member:'.$external,'sphere'=>'Бизнес','schoolIds'=>[$school]])['id'];

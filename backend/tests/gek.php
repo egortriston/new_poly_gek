@@ -21,6 +21,7 @@ foreach([$school,$school2] as $complexSchool) {
 // Withdrawing an appointment must not block unrelated edits to an existing commission.
 query('UPDATE sec_predsedatel_s SET area=NULL WHERE id_predsedatel_sc=$1',[$appointment]);
 query('DELETE FROM sec_helper WHERE chairman=$1',[$person]);
+query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$appointment]);
 $saved=saveGek($saved);
 expectError('CHAIRMAN_SCHOOL',fn()=>saveGek([...$body,'number'=>'27']));
 check(normalizeGekId('2','1')==='102','Missing prefix is normalized');

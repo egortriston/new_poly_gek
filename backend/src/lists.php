@@ -134,9 +134,7 @@ function peopleList(string $category, array $input): array
     $key=$external?'sm_id':'id_predsedatel_sc';
     if ($school !== '' && !$external) {
         $params[]=$school;
-        $sql.=$category==='complex'
-            ? ' AND EXISTS(SELECT 1 FROM sec_complex_sc sc WHERE sc.id_predsedatel_sc=t.id_predsedatel_sc AND sc.id_school=$'.count($params).')'
-            : ' AND EXISTS(SELECT 1 FROM sec_helper sh WHERE sh.chairman=t.sm_id AND sh.id_school=$'.count($params).')';
+        $sql.=' AND EXISTS(SELECT 1 FROM sec_chair_school cs WHERE cs.id_predsedatel_sc=t.id_predsedatel_sc AND cs.id_school=$'.count($params).')';
     }
     if ($sphere !== '' && !$external) {$params[]=$sphere; $sql.=' AND t.area=$'.count($params);}
     if ($id !== '') {$params[]=$id; $sql.=" AND t.$key=$".count($params);}

@@ -30,4 +30,14 @@ foreach (['Бизнес'=>'chairmen', 'Образование'=>'complex'] as $s
     expectError('VALIDATION', fn()=>chairmanPrint($category, [...$input, 'school'=>$school2]));
     expectError('NOT_FOUND', fn()=>chairmanPrint($category==='chairmen'?'complex':'chairmen', $input));
 }
+$schoolId=$school;
+$gekSchoolId=$school;
+$conn=database();
+$printYear='2028';
+$titleYear='2028';
+$signatureYear='2028';
+ob_start();
+try { require dirname(__DIR__).'/templates/gek/chairmen-list.php'; $schoolList=ob_get_contents(); }
+finally { ob_end_clean(); }
+check(str_contains($schoolList,'Сафаров Гасан Гусейн оглы'),'School list reads chairmen through the unified link');
 echo "PASS: chairman print, two spheres, programs, year, escaping, school validation and PDF generation. Public DB unchanged.\n";
