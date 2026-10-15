@@ -168,12 +168,16 @@ $html .= '
 $html.='<p class = "leftstr">
     <strong>СОГЛАСОВАНО:</strong>
 <br>
-    И.о. директора ИПМЭиТ
+    Директор Института
+<br>
+    промышленного менеджмента,
+<br>
+    экономики и торговли
  
 </p>
 <p class = "rightstr">
 <br>
-__________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/А.А. Евграфов/
+__________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/В.Э. Щепинин/
 <br>
 <br>
    «___»___________'.$signatureYear.' г.
