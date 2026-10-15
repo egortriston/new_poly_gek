@@ -14,9 +14,13 @@
 Set-Location 'C:\Program Files (x86)\Site'
 Stop-Service PEMHTTPD
 git pull --ff-only
+if ($LASTEXITCODE -ne 0) { throw 'Не удалось обновить код; службу пока не запускайте.' }
 php backend/bin/migrate-chairman-schools.php --check
+if ($LASTEXITCODE -ne 0) { throw 'Проверка баз не прошла; службу пока не запускайте.' }
 php backend/bin/migrate-chairman-schools.php --simulate
+if ($LASTEXITCODE -ne 0) { throw 'Пробный перенос не прошёл; службу пока не запускайте.' }
 php backend/bin/migrate-chairman-schools.php --apply
+if ($LASTEXITCODE -ne 0) { throw 'Миграция не завершилась; службу пока не запускайте.' }
 Start-Service PEMHTTPD
 ```
 
