@@ -98,13 +98,6 @@ function savePeople(string $category,array $body): array
         if($old)updateRecord('sec_predsedatel_s','id_predsedatel_sc',$id,$values);else $id=insertRecord('sec_predsedatel_s',$values,'id_predsedatel_sc');
         query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
         foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);
-        if($category==='complex'){
-            query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
-            foreach($schools as $school)insertRecord('sec_complex_sc',['id_predsedatel_sc'=>$id,'id_school'=>$school],'id');
-        }else{
-            query('DELETE FROM sec_helper WHERE chairman=$1',[$smId]);
-            insertRecord('sec_helper',['chairman'=>$smId,'id_school'=>$schools[0]],'id_sec');
-        }
         query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$id]);
         foreach($schools as $school)query('INSERT INTO sec_chair_school(id_predsedatel_sc,id_school) VALUES($1,$2)',[$id,$school]);
         $result=['id'=>$id];
@@ -140,9 +133,7 @@ function deletePeople(string $category,array $body): array
             foreach($cardIds as $cardId){
                 query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$cardId]);
                 query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$cardId]);
-                query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cardId]);
             }
-            query('DELETE FROM sec_helper WHERE chairman=$1',[$id]);
             query('DELETE FROM sec_predsedatel_s WHERE sm_id=$1',[$id]);
             query('DELETE FROM sec_sm WHERE sm_id=$1',[$id]);
             query('UPDATE sec SET chairman=NULL WHERE chairman=$1',[$id]);
@@ -151,8 +142,6 @@ function deletePeople(string $category,array $body): array
             if(!in_array($category,['chairmen','complex'],true))throw new ApiError(404,'NOT_FOUND','Таблица не найдена.');
             $row=lockedRecord('sec_predsedatel_s','id_predsedatel_sc',$id);requireVersion($body,chairState($row));
             if(($row['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');
-            query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
-            query('DELETE FROM sec_helper WHERE chairman=$1',[$row['sm_id']]);
             query('DELETE FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$id]);
             query('UPDATE sec_predsedatel_s SET area=NULL WHERE id_predsedatel_sc=$1',[$id]);
         }

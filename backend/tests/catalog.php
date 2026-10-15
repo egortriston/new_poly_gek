@@ -96,7 +96,6 @@ query('INSERT INTO sec(chairman,id_school) VALUES($1,$2)',[$external,$school]);
 deletePeople('chairmen',cardRow('chairmen',$chair));
 check(count(peopleSnapshot()['entries']['chairmen'])===0,'Deactivated chairman must leave active list');
 check(rows('SELECT area FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair])[0]['area']===null,'Deactivation clears sphere');
-check(count(rows('SELECT * FROM sec_helper WHERE chairman=$1',[$external]))===0,'Deactivation clears regular school links');
 check(count(rows('SELECT * FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$chair]))===0,'Deactivation clears unified school links');
 check(count(rows('SELECT * FROM sec WHERE chairman=$1',[$external]))===1,'Deactivation keeps existing GEC assignments');
 check(count(rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$chair]))===1,'Deactivation keeps professional card');
@@ -118,7 +117,7 @@ check(count(rows('SELECT * FROM sec_sm WHERE sm_id=$1',[$cascadeMember]))===0,'C
 check(rows('SELECT chairman FROM sec WHERE id_sec=$1',[$cascadeSec])[0]['chairman']===null,'Cascade clears the chairman without deleting the GEC');
 check(count(rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes the chairman card');
 check(count(rows('SELECT * FROM sec_program WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes chairman program links');
-check(count(rows('SELECT * FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes chairman school links');
+check(count(rows('SELECT * FROM sec_chair_school WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes chairman school links');
 check(count(rows('SELECT * FROM sec_predsedatel_s WHERE sm_id=$1 AND complex IS TRUE',[$cascadeMember]))===0,'Cascade removes the complex chairman card');
 deleteCatalog('disciplines',['id'=>$discipline,'version'=>catalogRow('disciplines',$discipline)['version']]);
 check(count(catalogSnapshot()['disciplines'])===0,'Unlinked record deleted');
