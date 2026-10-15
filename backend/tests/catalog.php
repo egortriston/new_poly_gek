@@ -119,7 +119,7 @@ check(rows('SELECT chairman FROM sec WHERE id_sec=$1',[$cascadeSec])[0]['chairma
 check(count(rows('SELECT * FROM sec_predsedatel_s WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes the chairman card');
 check(count(rows('SELECT * FROM sec_program WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes chairman program links');
 check(count(rows('SELECT * FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cascadeCard]))===0,'Cascade removes chairman school links');
-check(count(rows('SELECT * FROM sec_complex WHERE chairman=$1',[$cascadeMember]))===0,'Cascade removes the complex chairman marker');
+check(count(rows('SELECT * FROM sec_predsedatel_s WHERE sm_id=$1 AND complex IS TRUE',[$cascadeMember]))===0,'Cascade removes the complex chairman card');
 deleteCatalog('disciplines',['id'=>$discipline,'version'=>catalogRow('disciplines',$discipline)['version']]);
 check(count(catalogSnapshot()['disciplines'])===0,'Unlinked record deleted');
 $orphan=insertRecord('sec_predsedatel_s',['sm_id'=>'99999','area'=>'Бизнес','complex'=>'f'],'id_predsedatel_sc');

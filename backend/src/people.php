@@ -99,7 +99,6 @@ function savePeople(string $category,array $body): array
         query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
         foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);
         if($category==='complex'){
-            if(!pg_num_rows(query('SELECT 1 FROM sec_complex WHERE chairman=$1',[$smId])))insertRecord('sec_complex',['chairman'=>$smId],'id_complex');
             query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$id]);
             foreach($schools as $school)insertRecord('sec_complex_sc',['id_predsedatel_sc'=>$id,'id_school'=>$school],'id');
         }else{
@@ -144,7 +143,6 @@ function deletePeople(string $category,array $body): array
                 query('DELETE FROM sec_complex_sc WHERE id_predsedatel_sc=$1',[$cardId]);
             }
             query('DELETE FROM sec_helper WHERE chairman=$1',[$id]);
-            query('DELETE FROM sec_complex WHERE chairman=$1',[$id]);
             query('DELETE FROM sec_predsedatel_s WHERE sm_id=$1',[$id]);
             query('DELETE FROM sec_sm WHERE sm_id=$1',[$id]);
             query('UPDATE sec SET chairman=NULL WHERE chairman=$1',[$id]);
