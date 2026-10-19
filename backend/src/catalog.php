@@ -88,7 +88,8 @@ function catalogSnapshot(): array
 {
     $snapshot=[];
     foreach(catalogDefinitions() as $kind=>$def){
-        $snapshot[$kind]=array_map(function($row){$token=version($row);return array_map(fn($v)=>$v??'',$row)+['version'=>$token];},rows("SELECT * FROM {$def['table']} ORDER BY {$def['pk']}"));
+        $sort=match($kind){'programs'=>'id_program COLLATE "C",id_mep','directions'=>'number_direction COLLATE "C",id_direction',default=>$def['pk']};
+        $snapshot[$kind]=array_map(function($row){$token=version($row);return array_map(fn($v)=>$v??'',$row)+['version'=>$token];},rows("SELECT * FROM {$def['table']} ORDER BY $sort"));
     }
     $snapshot['levels']=array_map(fn($row)=>['id'=>(string)$row['id_level'],'name'=>$row['level']],rows('SELECT id_level, level FROM levels ORDER BY id_level'));
     return $snapshot;

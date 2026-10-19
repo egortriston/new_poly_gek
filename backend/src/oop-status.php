@@ -21,8 +21,8 @@ function oopStatusList(array $input): array
         $params[]=$status;
         $sql='SELECT * FROM ('.$sql.') filtered WHERE status=$'.count($params);
     }
-    return listPage($sql,'id_mep',$params,['oop-status',$q,$direction,$status],$input)+[
+    return listPage($sql,'id_mep',$params,['oop-status',$q,$direction,$status],$input,'id_program')+[
         'statuses'=>$counts,
-        'directions'=>rows('SELECT id_direction,number_direction,name_direction FROM direction_list ORDER BY number_direction,id_direction'),
+        'directions'=>rows('SELECT id_direction,number_direction,name_direction FROM direction_list ORDER BY number_direction COLLATE "C",id_direction'),
     ];
 }

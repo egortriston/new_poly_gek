@@ -58,7 +58,9 @@ export function Oop() {
   const [params, setParams] = useSearchParams();
   const [selected, setSelected] = useState(params.get("program") ?? "");
   useEffect(() => setSelected(params.get("program") ?? ""), [params]);
-  const programs = readCatalog().programs;
+  const programs = [...readCatalog().programs].sort((a, b) =>
+    a.id_program.localeCompare(b.id_program, "ru", { numeric: true }),
+  );
   const program = programs.find((p) => p.id_mep === selected);
   const current = oopSections.find((s) => s.id === section);
   const selection = (

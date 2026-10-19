@@ -46,3 +46,37 @@ check(optionList('people',['q'=>'60 · тестовый','id'=>$last['items'][0]
 check(matchesSearch('38.03.05_01 · Архитектура предприятия','предприятия 38.03.05_01 архитект'),'Program code and partial name match in any order');
 check(!matchesSearch('38.03.05_01 · Архитектура предприятия','38.03.05_02'),'Program codes stay distinct');
 echo "PASS: flexible search regression checks.".PHP_EOL;
+
+// Codes are deliberately inserted in reverse order to test sorting across page boundaries.
+for($i=55;$i>=1;$i--){
+    $code=sprintf('90.03.05_%02d',$i);
+    saveCatalog('programs',['id_program'=>$code,'name_program'=>'Программа '.$i,'id_direction'=>$direction]);
+    saveCatalog('directions',['number_direction'=>sprintf('90.%02d.01',$i),'name_direction'=>'Направление '.$i,'id_level'=>'1']);
+}
+foreach([['programs','id_program'],['directions','number_direction']] as [$kind,$code]){
+    $all=[];$cursor=null;
+    do{
+        $page=catalogList($kind,$cursor?['cursor'=>$cursor]:[]);
+        $all=[...$all,...array_column($page['items'],$code)];
+        $cursor=$page['nextCursor'];
+    }while($cursor);
+    $expected=$all;sort($expected,SORT_STRING);
+    check($all===$expected && count($all)===count(array_unique($all)),"$kind stay sorted across pages");
+    $options=[];$cursor=null;
+    do{
+        $page=optionList($kind,$cursor?['cursor'=>$cursor]:[]);
+        $options=[...$options,...array_column($page['items'],'sort_code')];
+        $cursor=$page['nextCursor'];
+    }while($cursor);
+    check($options===$all,"$kind options follow the same code order");
+}
+require dirname(__DIR__).'/src/oop-status.php';
+$status=[];$cursor=null;
+do{
+    $page=oopStatusList($cursor?['cursor'=>$cursor]:[]);
+    $status=[...$status,...array_column($page['items'],'id_program')];
+    $cursor=$page['nextCursor'];
+}while($cursor);
+$expected=$status;sort($expected,SORT_STRING);
+check($status===$expected,'OOP status stays sorted across pages');
+echo "PASS: directions, programs, options and OOP status follow code order across pages.".PHP_EOL;

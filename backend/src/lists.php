@@ -18,7 +18,7 @@ function listText(array $input, string $key): string
 }
 
 // Cursor is tied to the search and filters. Identity ordering is unaffected by name edits.
-function listPage(string $sql, string $key, array $params, array $scope, array $input): array
+function listPage(string $sql, string $key, array $params, array $scope, array $input, ?string $sortKey=null): array
 {
     $cursor = listText($input, 'cursor');
     $fingerprint = hash('sha256', json_encode($scope));
@@ -26,15 +26,22 @@ function listPage(string $sql, string $key, array $params, array $scope, array $
     $where = '';
     if ($cursor !== '') {
         $decoded = json_decode(base64_decode($cursor, true) ?: '', true);
-        if (!is_array($decoded) || ($decoded['scope'] ?? '') !== $fingerprint || !is_string($decoded['id'] ?? null))
+        if (!is_array($decoded) || ($decoded['scope'] ?? '') !== $fingerprint || !is_string($decoded['id'] ?? null)
+            || ($sortKey !== null && !is_string($decoded['sort'] ?? null)))
             throw new ApiError(422, 'INVALID_CURSOR', 'Параметры списка изменились. Обновите таблицу.');
+        if ($sortKey !== null) $params[] = $decoded['sort'];
         $params[] = $decoded['id'];
-        $where = "WHERE $key > $".count($params);
+        $where = $sortKey === null
+            ? "WHERE $key > $".count($params)
+            : "WHERE ($sortKey COLLATE \"C\", $key) > ($".(count($params)-1).", $".count($params).")";
     }
-    $result = rows("SELECT * FROM ($sql) listed $where ORDER BY $key LIMIT 51", $params);
+    $order = $sortKey === null ? $key : "$sortKey COLLATE \"C\", $key";
+    $result = rows("SELECT * FROM ($sql) listed $where ORDER BY $order LIMIT 51", $params);
     $more = count($result) > 50;
     if ($more) array_pop($result);
-    return ['items' => $result, 'total'=>$total, 'nextCursor' => $more ? base64_encode(json_encode(['scope'=>$fingerprint,'id'=>(string)end($result)[$key]])) : null];
+    $next = $more ? ['scope'=>$fingerprint,'id'=>(string)end($result)[$key]] : null;
+    if ($next !== null && $sortKey !== null) $next['sort']=(string)end($result)[$sortKey];
+    return ['items' => $result, 'total'=>$total, 'nextCursor' => $next !== null ? base64_encode(json_encode($next)) : null];
 }
 
 function likeText(string $query): string
@@ -98,7 +105,8 @@ function catalogList(string $kind, array $input): array
     foreach ([$filterKey=>$filter, $def['pk']=>$id] as $field=>$value) if ($field !== '' && $value !== '') {
         $params[]=$value; $conditions[]="t.$field=$".count($params);
     }
-    $page = listPage("SELECT t.* $extras FROM {$def['table']} t $joins WHERE ".implode(' AND ', $conditions), $def['pk'], $params, [$kind,$q,$filter,$id], $input);
+    $sortKey=match($kind){'programs'=>'id_program','directions'=>'number_direction',default=>null};
+    $page = listPage("SELECT t.* $extras FROM {$def['table']} t $joins WHERE ".implode(' AND ', $conditions), $def['pk'], $params, [$kind,$q,$filter,$id], $input, $sortKey);
     $page['items'] = array_map(function($row) {
         $raw = array_filter($row, fn($key)=>!str_starts_with($key,'_'), ARRAY_FILTER_USE_KEY);
         return array_map(fn($v)=>$v??'', $row)+['version'=>version($raw)];
@@ -147,9 +155,9 @@ function peopleList(string $category, array $input): array
 function optionList(string $kind, array $input): array
 {
     $sql=match($kind) {
-        'programs'=>"SELECT id_mep::text AS value, concat_ws(' · ',id_program,name_program) AS label FROM program_list",
+        'programs'=>"SELECT id_mep::text AS value, concat_ws(' · ',id_program,name_program) AS label, id_program AS sort_code FROM program_list",
         'schools'=>"SELECT id_school::text AS value, name_school AS label FROM school",
-        'directions'=>"SELECT id_direction::text AS value, concat_ws(' · ',number_direction,name_direction) AS label FROM direction_list",
+        'directions'=>"SELECT id_direction::text AS value, concat_ws(' · ',number_direction,name_direction) AS label, number_direction AS sort_code FROM direction_list",
         'levels'=>"SELECT id_level::text AS value, level AS label FROM levels",
         'people'=>"SELECT 'member:'||sm_id AS value, concat_ws(' · ',sm_name,organization) AS label FROM sec_member
             UNION ALL SELECT 'teacher:'||t.id_teacher AS value, concat_ws(' · ',t.name_teacher,s.name_school) AS label
@@ -167,5 +175,5 @@ function optionList(string $kind, array $input): array
     $condition=searchCondition("label", $q, $params);
     $sql="SELECT * FROM ($sql) options WHERE $condition";
     if ($id !== '') {$params[]=$id; $sql.=' AND value=$'.count($params);}
-    return listPage($sql,'value',$params,[$kind,$q,$id],$input);
+    return listPage($sql,'value',$params,[$kind,$q,$id],$input,in_array($kind,['programs','directions'],true)?'sort_code':null);
 }
