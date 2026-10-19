@@ -44,8 +44,8 @@ export function AddPersonEntry({
         name: values.name.trim(),
         organization: values.organization.trim(),
         position: values.position.trim(),
-        degree: values.degree.trim() || "—",
-        rank: values.rank.trim() || "—",
+        degree: values.degree.trim(),
+        rank: values.rank.trim(),
         kind: "external",
         color: "sage",
         initials: values.name

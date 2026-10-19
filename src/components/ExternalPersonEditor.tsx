@@ -10,7 +10,11 @@ export function ExternalPersonEditor({
   onSave: (person: Person) => Promise<void>;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState({ ...person });
+  const [draft, setDraft] = useState({
+    ...person,
+    degree: person.degree === "—" ? "" : person.degree,
+    rank: person.rank === "—" ? "" : person.rank,
+  });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   return (
