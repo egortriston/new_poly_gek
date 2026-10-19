@@ -43,7 +43,7 @@ function oopDirectionList(string $kind,array $input): array
     $where=searchCondition("concat_ws(' ',$direction,".implode(',',$labels).')',listText($input,'q'),$params);
     if(listText($input,'direction')!==''){$params[]=listText($input,'direction');$where.=' AND t.id_direction::text=$'.count($params);}
     $extra='';foreach($labels as $index=>$label)$extra.=",$label AS _label$index";
-    $page=listPage("SELECT t.*,$direction AS _direction $extra FROM {$def['table']} t LEFT JOIN direction_list d USING(id_direction) WHERE $where",$def['pk'],$params,[$kind,listText($input,'q'),listText($input,'direction')],$input);
+    $page=listPage("SELECT t.*,$direction AS _direction,COALESCE(d.number_direction,'') AS _sort_code $extra FROM {$def['table']} t LEFT JOIN direction_list d USING(id_direction) WHERE $where",$def['pk'],$params,[$kind,listText($input,'q'),listText($input,'direction')],$input,'_sort_code');
     $page['items']=array_map(function($row)use($def){
         $raw=array_filter($row,fn($key)=>!str_starts_with($key,'_'),ARRAY_FILTER_USE_KEY);
         return ['id'=>$raw[$def['pk']],'directionId'=>$raw['id_direction']??'','directionName'=>$row['_direction'],'version'=>version($raw),'level'=>'','levelName'=>'','values'=>array_map(fn($field)=>oopPlain($raw[$field]??''),$def['fields']),'labels'=>array_map(fn($i)=>oopPlain($row['_label'.$i]??''),array_keys($def['fields']))];

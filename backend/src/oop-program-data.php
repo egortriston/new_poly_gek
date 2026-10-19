@@ -19,10 +19,10 @@ function oopDataList(string $kind,array $input): array
     $search=$kind==='matrix' ? 'tt.name_type_task,t.name_prof_task,o.name_prof_object,r.category_prof,r.code_prof,r.indicator_prof,r.base' : 'e.name_education_form';
     $params=[];$where=searchCondition("concat_ws(' ',p.id_program,p.name_program,$search)",$q,$params);
     if($program!==''){$params[]=$program;$where.=' AND (r.id_mep::text=$'.count($params).($kind==='matrix'?' OR r.id_mep IS NULL':'').')';}
-    $page=listPage("SELECT r.*,p.id_program,p.name_program,$extra FROM $table r LEFT JOIN program_list p ON p.id_mep=r.id_mep $joins WHERE $where",$pk,$params,['oop-data',$kind,$q,$program],$input);
+    $page=listPage("SELECT r.*,p.id_program,p.name_program,COALESCE(p.id_program,'') AS _sort_code,$extra FROM $table r LEFT JOIN program_list p ON p.id_mep=r.id_mep $joins WHERE $where",$pk,$params,['oop-data',$kind,$q,$program],$input,'_sort_code');
     foreach($page['items'] as &$row){
         $raw=$row;
-        foreach(['id_program','name_program','task_type','task_name','object_name','name_education_form'] as $key)unset($raw[$key]);
+        foreach(['id_program','name_program','_sort_code','task_type','task_name','object_name','name_education_form'] as $key)unset($raw[$key]);
         $row=['id'=>$row[$pk],'programId'=>$row['id_mep']??'','code'=>$row['id_program']??'','name'=>$row['name_program']??'Общая компетенция','version'=>version($raw),
             'task'=>$row['id_prof_task']??'','object'=>$row['id_prof_object']??'','form'=>$row['id_ef']??'',
             'values'=>array_map(fn($key)=>oopPlain($row[$key]??''),$kind==='matrix'?['task_type','task_name','object_name','category_prof','code_prof','indicator_prof','base']:['name_education_form'])];
