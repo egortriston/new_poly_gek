@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Printer, FileSpreadsheet } from 'lucide-react';
-import { useStore } from '../store';
 import { useGek } from '../data/gek';
 import { AppSelect } from '../components/AppSelect';
 import { PageTitle } from '../components/PageTitle';
@@ -9,7 +8,6 @@ import { GekPdfPreview, type GekDocumentKind } from '../components/GekPdfPreview
 import { PrintYears } from '../components/PrintYears';
 
 export function GekDocuments() {
-  const {user}=useStore();
   const {commissions,schools,numberingStart,updateNumbering,year}=useGek();
  const defaultYear=Number(year)+1;
  const [titleYear,setTitleYear]=useState(String(defaultYear));
@@ -44,14 +42,14 @@ export function GekDocuments() {
   ];
   return <div className="page-enter hub-page">
     <Link className="text-button" to="/gek">Комиссии ГЭК /</Link>
-    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p>{user?.role==='admin'&&<a className="button secondary" href="/api/v1/people/chairmen/export" download><FileSpreadsheet size={16}/> Выгрузить председателей в Excel</a>}</div>
+    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p></div>
     <div className="gek-print-settings">
       <PrintYears defaultYear={defaultYear} titleYear={titleYear} signatureYear={signatureYear} onTitleYear={setTitleYear} onSignatureYear={setSignatureYear}/>
       <label className="gek-numbering">Начать нумерацию ГЭК с<input aria-label="Начать нумерацию ГЭК с" aria-invalid={!!numberError} aria-describedby={numberError?'gek-numbering-error':undefined} disabled={saving} type="number" min="1" max="9999" value={start} onChange={e=>{setStart(e.target.value);setNumberError('');}}/></label>
       <label className="document-school">Высшая школа<AppSelect disabled={saving} value={school} onChange={e=>setSchool(e.target.value)}><option value="">Выберите высшую школу</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</AppSelect></label>
       {numberError && <p id="gek-numbering-error" role="alert" className="form-error">{numberError}</p>}
     </div>
-    <div className="print-actions">{documents.map(doc=><section key={doc.kind}>
+    <div className="print-actions"><section><span className="module-icon"><FileSpreadsheet size={23}/></span><div><h2>Сведения о председателях ГЭК · Excel</h2><p>Выгрузка карточек председателей и связанных образовательных программ. Выбор высшей школы выше на этот файл не влияет.</p><a className="button secondary" href="/api/v1/people/chairmen/export" download>Скачать Excel</a></div></section>{documents.map(doc=><section key={doc.kind}>
       <span className="module-icon"><Printer size={23}/></span><div><h2>{doc.title}</h2><p>{doc.description}</p>
       <div className="button-row"><button className="button primary" disabled={saving || !school || (doc.kind!=='chairmen'&&!hasSelected)} onClick={()=>void openPrint(doc.kind,school)}>По выбранной школе</button>
       <button className="button secondary" disabled={saving || (doc.kind!=='chairmen'&&!commissions.length)} onClick={()=>void openPrint(doc.kind,'')}>По всем школам</button></div></div>

@@ -53,7 +53,7 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
-    if($path==='/api/v1/people/chairmen/export'&&$method==='GET'){requireAdmin($user);chairmanExport();}
+    if($path==='/api/v1/people/chairmen/export'&&$method==='GET'){chairmanExport();}
     if (preg_match('#^/api/v1/catalog/(directions|programs)(/|$)#', $path)) requireAdmin($user);
     databaseSession();
     if($method!=='GET'||isset($_SERVER['HTTP_X_DATABASE_CONTEXT']))requireDatabaseContext();

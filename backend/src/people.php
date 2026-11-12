@@ -111,7 +111,12 @@ function savePeople(string $category,array $body): array
             $directions[]=(string)$programRow['id_direction'];
             $programCodes[]=(string)$programRow['id_program'];
         }
-        foreach(CHAIR_FIELDS as $key=>$column){if(array_key_exists($key,$fields)){$value=requiredText($fields,$key);$values[$column]=$column==='education_diploma_date'&&$value===''?null:$value;}}
+        foreach(CHAIR_FIELDS as $key=>$column){if(array_key_exists($key,$fields)){
+            $value=requiredText($fields,$key);
+            if($column==='education_speciality'&&$value!==null&&$value!==($old[$column]??null))$value=preg_replace('/^\s*квалификация\s*[—:-]\s*/iu','',trim($value));
+            if($column==='education_specialization'&&$value!==null&&$value!==($old[$column]??null))$value=preg_replace('/^\s*специализация\s*[—:-]\s*/iu','',trim($value));
+            $values[$column]=$column==='education_diploma_date'&&$value===''?null:$value;
+        }}
         if($old)updateRecord('sec_predsedatel_s','id_predsedatel_sc',$id,$values);else $id=insertRecord('sec_predsedatel_s',$values,'id_predsedatel_sc');
         query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
         foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);

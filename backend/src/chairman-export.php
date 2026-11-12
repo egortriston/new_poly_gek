@@ -21,7 +21,7 @@ function chairmanExport(): never
             $row['organization_inn']??'',$row['organization']??'',$row['sm_position']??'',$row['email']??'',$row['phone']??'',
             $row['education_university']??'',trim(implode(' ',array_filter([$row['education_diploma_series']??'',$row['education_diploma_number']??'']))),
             $row['education_name']??'',chairmanExportDate($row['education_diploma_date']??null),$row['education_specialization']??'',
-            $row['education_speciality']??'',$row['academic_degree']??'',
+            preg_replace('/^\s*квалификация\s*[—:-]\s*/iu','',trim((string)($row['education_speciality']??''))),$row['academic_degree']??'',
             trim(implode(' ',array_filter([$row['diploma_series']??'',$row['diploma_nu']??'']))),chairmanExportDate($row['diploma_date']??null),
             '','','',$row['academic_rank']??'',trim(implode(' ',array_filter([$row['at_series']??'',$row['at_nu']??'']))),
             chairmanExportDate($row['at_date']??null),$row['academic_title']??'',$row['honorary_title']??'',
