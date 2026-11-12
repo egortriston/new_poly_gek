@@ -125,6 +125,8 @@ function peopleEntry(string $category, array $row): array
     if ($category === 'external') return ['id'=>$row['sm_id'],'personId'=>$person['id'],'person'=>$person,'sphere'=>'Бизнес','schoolIds'=>[],'values'=>(object)[],'version'=>version($row)];
     $state = chairState($row); $values=[];
     foreach(CHAIR_FIELDS as $key=>$column) $values[$key]=$row[$column]??'';
+    $values=array_merge($values,chairDiplomaValues($row));
+    foreach(['academicDegree'=>'degree','academicRank'=>'rank','academicTitle'=>'academicTitle'] as $key=>$personKey) $values[$key]=$person[$personKey]??'';
     return ['id'=>$row['id_predsedatel_sc'],'personId'=>$person['id'],'person'=>$person,'sphere'=>$row['area']??'','schoolIds'=>$state['schools'],'programIds'=>$state['programs'],'directionIds'=>$state['directions'],'values'=>$values,'version'=>version($state)];
 }
 

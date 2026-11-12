@@ -3,6 +3,7 @@ import type { Person } from "../data/model";
 import { Field, Modal } from "./ui";
 import { AppSelect } from "./AppSelect";
 import { displayPersonDate, savePersonDate } from "../data/personDate";
+import { formatDateInput, formatPhoneInput, validDateInput, validPhoneInput } from "../data/inputFormats";
 export function ExternalPersonEditor({
   person,
   onSave,
@@ -14,8 +15,6 @@ export function ExternalPersonEditor({
 }) {
   const [draft, setDraft] = useState({
     ...person,
-    degree: person.degree === "—" ? "" : person.degree,
-    rank: person.rank === "—" ? "" : person.rank,
     birthDate: displayPersonDate(person.birthDate),
   });
   const [error, setError] = useState("");
@@ -55,6 +54,8 @@ export function ExternalPersonEditor({
             setError("Укажите ФИО");
             return;
           }
+          if (!validDateInput(draft.birthDate)) { setError("Проверьте дату рождения: ДД.ММ.ГГГГ."); return; }
+          if (!validPhoneInput(draft.phone ?? "")) { setError("Телефон укажите в формате +7XXXXXXXXXX."); return; }
           setBusy(true);
           setError("");
           try {
@@ -86,9 +87,6 @@ export function ExternalPersonEditor({
             ["email", "Электронная почта"],
             ["phone", "Телефон"],
             ["birthDate", "Дата рождения"],
-            ["academicTitle", "Академическое звание"],
-            ["degree", "Учёная степень"],
-            ["rank", "Учёное звание"],
           ] as const
         ).filter(([key]) => key !== 'inn' || person.kind === 'external').map(([key, label]) => (
           <Field key={key} label={label} required={key === "name"}>
@@ -100,7 +98,7 @@ export function ExternalPersonEditor({
               type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
               pattern={key === "inn" ? "[0-9]{10}([0-9]{2})?" : key === "phone" ? "\\+7[0-9]{10}" : key === "birthDate" ? "[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}" : undefined}
               placeholder={key === "birthDate" ? "ДД.ММ.ГГГГ" : key === "phone" ? "+7XXXXXXXXXX" : key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
-              onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+              onChange={(e) => setDraft({ ...draft, [key]: key === "phone" ? formatPhoneInput(e.target.value) : key === "birthDate" ? formatDateInput(e.target.value) : e.target.value })}
             />
           </Field>
         ))}

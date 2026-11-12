@@ -15,6 +15,8 @@ import {
   UserRound,
 } from "lucide-react";
 import type { Entry } from "../pages/PeopleTable";
+import { displayPersonDate } from "../data/personDate";
+import { formatDateInput, formatPhoneInput, validDateInput, validPhoneInput } from "../data/inputFormats";
 import { type Person } from "../data/model";
 import { Avatar, Confirm, Empty, Field, Picker, SectionHeading } from "./ui";
 export function ChairmanCard({
@@ -28,7 +30,6 @@ export function ChairmanCard({
   onArchive,
   onPrint,
   onSave,
-  onEditPerson,
   onBack,
 }: {
   entry: Entry;
@@ -41,7 +42,6 @@ export function ChairmanCard({
   onArchive: () => Promise<void>;
   onPrint: () => void;
   onSave: () => Promise<Entry>;
-  onEditPerson: () => void;
   onBack: () => void;
 }) {
   const [baseline, setBaseline] = useState(() => JSON.stringify(entry));
@@ -69,6 +69,16 @@ export function ChairmanCard({
   const save = async () => {
     if (busy) return;
     if (!entry.schoolIds.length) {setError("Выберите хотя бы одну высшую школу.");return;}
+    if (!validPhoneInput(person.phone ?? "")) {setError("Телефон укажите в формате +7XXXXXXXXXX.");return;}
+    const previous = JSON.parse(baseline) as Entry;
+    const dates = [
+      ["Дата рождения", person.birthDate ?? "", previous.person?.birthDate ?? ""],
+      ["Дата диплома об образовании", entry.values.educationDiplomaDate ?? "", previous.values.educationDiplomaDate ?? ""],
+      ["Дата выдачи диплома о степени", entry.values.diplomaDate ?? "", previous.values.diplomaDate ?? ""],
+      ["Дата выдачи аттестата", entry.values.certificateDate ?? "", previous.values.certificateDate ?? ""],
+    ];
+    const invalidDate = dates.find(([, value, saved]) => value !== saved && !validDateInput(displayPersonDate(value)));
+    if (invalidDate) {setError(`${invalidDate[0]}: укажите существующую дату в формате ДД.ММ.ГГГГ.`);return;}
     setBusy(true);
     setError("");
     try {
@@ -92,19 +102,35 @@ export function ChairmanCard({
       setArchiving(false);
     }
   };
-  const input = (key: string, label: string, placeholder = "") => (
+  const input = (key: string, label: string, placeholder = "", date = false) => (
     <Field key={key} label={label}>
       <input
         aria-label={label}
-        value={entry.values[key] ?? ""}
+        value={date ? displayPersonDate(entry.values[key] ?? "") : entry.values[key] ?? ""}
         placeholder={placeholder}
+        inputMode={date ? "numeric" : undefined}
+        pattern={date ? "[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}" : undefined}
         onChange={(e) =>
           !busy &&
           onChange({
             ...entry,
-            values: { ...entry.values, [key]: e.target.value },
+            values: { ...entry.values, [key]: date ? formatDateInput(e.target.value) : e.target.value },
           })
         }
+      />
+    </Field>
+  );
+  const personInput = (key: "organization" | "inn" | "position" | "email" | "phone" | "birthDate", label: string, placeholder = "") => (
+    <Field key={key} label={label}>
+      <input
+        aria-label={label}
+        disabled={busy || person.missing}
+        value={key === "birthDate" ? displayPersonDate(person[key] ?? "") : person[key] ?? ""}
+        placeholder={placeholder}
+        type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
+        inputMode={key === "inn" || key === "phone" || key === "birthDate" ? "numeric" : undefined}
+        pattern={key === "inn" ? "[0-9]{10}([0-9]{2})?" : key === "phone" ? "\\+7[0-9]{10}" : key === "birthDate" ? "[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}" : undefined}
+        onChange={(event) => onChange({ ...entry, person: { ...person, [key]: key === "phone" ? formatPhoneInput(event.target.value) : key === "birthDate" ? formatDateInput(event.target.value) : event.target.value } })}
       />
     </Field>
   );
@@ -184,12 +210,7 @@ export function ChairmanCard({
       </div>
       <div className="page-heading detail-heading">
         <div>
-          <div className="heading-eyebrow">ИСХОДНЫЕ ДАННЫЕ · ЛЮДИ</div>
           <PageTitle>Карточка председателя</PageTitle>
-          <p>
-            {complex ? "Комплексная ГЭК" : "ГЭК по направлению"} ·{" "}
-            {entry.sphere}
-          </p>
         </div>
         <button
           className="button primary"
@@ -201,11 +222,7 @@ export function ChairmanCard({
       </div>
       <div className="detail-grid">
         <div className="detail-primary">
-          <SectionHeading
-            eyebrow="СВЕДЕНИЯ О ПРЕДСЕДАТЕЛЕ"
-            title="Профессиональная карточка"
-            description="Образование, научная квалификация и профессиональная деятельность."
-          />
+          <SectionHeading title="Профессиональная карточка" />
           <div className="profile-person">
             <Avatar person={person} />
             <div>
@@ -215,7 +232,6 @@ export function ChairmanCard({
               </p>
             </div>
             <span className="subtle-pill">{entry.sphere}</span>
-            {!person.missing && <button type="button" className="button secondary" onClick={onEditPerson}>Редактировать сведения участника</button>}
           </div>
           <div className="profile-form">
             {person.missing && (
@@ -229,6 +245,18 @@ export function ChairmanCard({
               <p className="form-error" role="alert">
                 {error}
               </p>
+            )}
+            {section(
+              "Сведения участника",
+              "Эти данные также используются в карточке внешнего члена ГЭК.",
+              <UserRound size={18} />,
+              <>
+                {personInput("organization", "Организация")}
+                {person.kind === "external" && personInput("inn", "ИНН организации")}
+                <div className="form-grid">{personInput("position", "Должность")}{personInput("email", "Электронная почта")}</div>
+                <div className="form-grid">{personInput("phone", "Телефон", "+7XXXXXXXXXX")}{personInput("birthDate", "Дата рождения", "ДД.ММ.ГГГГ")}</div>
+                <Field label="Пол"><AppSelect aria-label="Пол" disabled={busy || person.missing} value={person.gender ?? ""} onChange={(event) => onChange({ ...entry, person: { ...person, gender: event.target.value } })}><option value="">Не указан</option><option value="male">Мужской</option><option value="female">Женский</option></AppSelect></Field>
+              </>,
             )}
             {section(
               complex ? "Высшие школы" : "Высшая школа",
@@ -369,7 +397,7 @@ export function ChairmanCard({
                   "Учебное заведение",
                   "Название учебного заведения",
                 )}
-                <div className="form-grid three">{input("educationDiplomaSeries", "Серия диплома об образовании")}{input("educationDiplomaNumber", "Номер диплома об образовании")}{input("educationDiplomaDate", "Дата диплома об образовании", "ГГГГ-ММ-ДД")}</div>
+                <div className="form-grid">{input("educationDiploma", "Серия и номер диплома об образовании")}{input("educationDiplomaDate", "Дата диплома об образовании", "ДД.ММ.ГГГГ", true)}</div>
                 {input("education", "Наименование специальности или направления подготовки", "Наименование специальности или направления подготовки по диплому")}
                 {input(
                   "qualification",
@@ -381,29 +409,32 @@ export function ChairmanCard({
             )}
             {section(
               "Учёная степень",
-              person.degree,
+              "Сведения об учёной степени председателя",
               <BookOpen size={18} />,
-              <div className="form-grid three">
-                {input("diplomaSeries", "Серия диплома о степени")}
-                {input("diplomaNumber", "Номер диплома")}
-                {input("diplomaDate", "Дата выдачи диплома", "ГГГГ-ММ-ДД")}
-              </div>,
+              <>
+              {input("academicDegree", "Учёная степень")}
+              <div className="form-grid">
+                {input("degreeDiploma", "Серия и номер диплома о степени")}
+                {input("diplomaDate", "Дата выдачи диплома", "ДД.ММ.ГГГГ", true)}
+              </div>
+              </>,
             )}
             {section(
               "Учёное звание",
-              person.rank,
+              "Сведения об учёном звании председателя",
               <FileText size={18} />,
               <>
+                {input("academicRank", "Учёное звание")}
                 <div className="form-grid">
                   {input("department", "Кафедра")}
                   {input("speciality", "Научная специальность")}
                 </div>
-                <div className="form-grid three">
-                  {input("certificateSeries", "Серия аттестата")}
-                  {input("certificateNumber", "Номер аттестата")}
-                  {input("certificateDate", "Дата выдачи аттестата", "ГГГГ-ММ-ДД")}
+                <div className="form-grid">
+                  {input("certificate", "Серия и номер аттестата")}
+                  {input("certificateDate", "Дата выдачи аттестата", "ДД.ММ.ГГГГ", true)}
                 </div>
                 {input("honoraryTitle", "Почётное звание", "При наличии")}
+                {input("academicTitle", "Академическое звание", "При наличии")}
               </>,
             )}
             {section(

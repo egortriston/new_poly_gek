@@ -23,6 +23,15 @@ function chairState(array $row): array
     $programs=rows('SELECT p.id_mep::text AS id_mep, p.id_direction::text AS id_direction FROM sec_program s JOIN program_list p ON p.id_program=s.id_program WHERE s.id_predsedatel_sc=$1 ORDER BY p.id_program,p.id_mep',[$row['id_predsedatel_sc']]);
     return ['record'=>$row,'schools'=>array_column($schools,'id_school'),'programs'=>array_column($programs,'id_mep'),'directions'=>array_values(array_unique(array_column($programs,'id_direction')))];
 }
+function chairDiplomaValues(array $row): array
+{
+    $result=[];
+    foreach(['educationDiploma'=>['education_diploma_series','education_diploma_number'],
+        'degreeDiploma'=>['diploma_series','diploma_nu'],
+        'certificate'=>['at_series','at_nu']] as $key=>[$series,$number])
+        $result[$key]=trim(implode(' ',array_filter([$row[$series]??'', $row[$number]??''],fn($value)=>trim((string)$value)!=='')));
+    return $result;
+}
 function peopleSnapshot(): array
 {
     $members=rows('SELECT * FROM sec_member ORDER BY sm_name, sm_id');
@@ -37,6 +46,9 @@ function peopleSnapshot(): array
             $people[]=['id'=>'member:'.$row['sm_id'],'name'=>'Участник не найден','organization'=>'Нарушена связь в исходных данных','position'=>'','degree'=>'','rank'=>'','kind'=>'external','color'=>'sage','initials'=>'?','missing'=>true];
         }
         $state=chairState($row);$values=[];foreach(CHAIR_FIELDS as $key=>$column)$values[$key]=$row[$column]??'';
+        $values=array_merge($values,chairDiplomaValues($row));
+        $member=rows('SELECT academic_degree,academic_rank,academic_title FROM sec_member WHERE sm_id=$1',[$row['sm_id']])[0]??[];
+        foreach(['academicDegree'=>'academic_degree','academicRank'=>'academic_rank','academicTitle'=>'academic_title'] as $key=>$column)$values[$key]=$member[$column]??'';
         $entry=['id'=>(string)$row['id_predsedatel_sc'],'personId'=>'member:'.$row['sm_id'],'sphere'=>$row['area']??'','schoolIds'=>$state['schools'],'programIds'=>$state['programs'],'directionIds'=>$state['directions'],'values'=>$values,'version'=>version($state)];
         if($row['complex']==='t')$complex[]=$entry;else $chairmen[]=$entry;
     }
@@ -63,7 +75,7 @@ function savePeople(string $category,array $body): array
             if($category==='member'&&!$old)throw new ApiError(422,'VALIDATION','Выберите существующего участника.');
             if($old){if($category==='external'&&$old['sm_outer']!=='t')throw new ApiError(409,'INVALID_PERSON','Это внутренний участник.');requireVersion($body,$old);}
             $person=$body['person']??[];if(!is_array($person))throw new ApiError(422,'VALIDATION','Неверные сведения участника.');
-            $values=['sm_outer'=>$old?$old['sm_outer']:'t'];foreach(['name'=>'sm_name','organization'=>'organization','position'=>'sm_position','degree'=>'academic_degree','rank'=>'academic_rank','email'=>'email','academicTitle'=>'academic_title'] as $key=>$column)$values[$column]=requiredText($person,$key,$key==='name');
+            $values=['sm_outer'=>$old?$old['sm_outer']:'t'];foreach(['name'=>'sm_name','organization'=>'organization','position'=>'sm_position','email'=>'email'] as $key=>$column)$values[$column]=requiredText($person,$key,$key==='name');
             $inn=requiredText($person,'inn')?:null;
             if($inn!==null&&!preg_match('/^\d{10}(?:\d{2})?$/D',$inn))throw new ApiError(422,'VALIDATION','ИНН должен содержать 10 или 12 цифр.');
             $values['organization_inn']=$inn;
@@ -79,6 +91,9 @@ function savePeople(string $category,array $body): array
             if($id)updateRecord('sec_member','sm_id',$id,$values);else $id=insertRecord('sec_member',$values,'sm_id');
             return ['id'=>$id];
         }
+        $requiredColumns=['education_diploma_series','education_diploma_number','education_diploma_date','education_specialization'];
+        $present=rows("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='sec_predsedatel_s' AND column_name=ANY($1::text[])",['{'.implode(',',$requiredColumns).'}']);
+        if(count($present)!==count($requiredColumns))throw new ApiError(503,'DATABASE_MIGRATION_REQUIRED','Структура выбранной базы не обновлена для карточек председателей. Обратитесь к администратору.');
         $old=$id?lockedRecord('sec_predsedatel_s','id_predsedatel_sc',$id):null;
         $reactivated=false;
         if($old){if(($old['complex']==='t')!==($category==='complex'))throw new ApiError(409,'WRONG_CATEGORY','Неверный тип карточки.');requireVersion($body,chairState($old));}
@@ -101,6 +116,43 @@ function savePeople(string $category,array $body): array
         if(!$old && pg_num_rows(query("SELECT 1 FROM sec_predsedatel_s WHERE sm_id=$1 AND area IS NOT NULL AND btrim(area)<>''",[$smId])))throw new ApiError(409,'DUPLICATE','Карточка этого председателя уже существует.');
         $values=['sm_id'=>$smId,'area'=>$sphere,'complex'=>$category==='complex'?'t':'f'];
         $fields=$body['values']??[];if(!is_array($fields))throw new ApiError(422,'VALIDATION','Неверные поля карточки.');
+        $memberFields=[];
+        foreach(['academicDegree'=>'academic_degree','academicRank'=>'academic_rank','academicTitle'=>'academic_title'] as $key=>$column)
+            if(array_key_exists($key,$fields))$memberFields[$column]=requiredText($fields,$key);
+        $person=$body['person']??null;
+        if($person!==null){
+            if(!is_array($person))throw new ApiError(422,'VALIDATION','Неверные сведения участника.');
+            foreach(['organization'=>'organization','position'=>'sm_position','email'=>'email'] as $key=>$column)
+                if(array_key_exists($key,$person))$memberFields[$column]=requiredText($person,$key);
+            if(array_key_exists('inn',$person)){
+                $inn=requiredText($person,'inn')?:null;
+                if($inn!==null&&!preg_match('/^\d{10}(?:\d{2})?$/D',$inn))throw new ApiError(422,'VALIDATION','ИНН должен содержать 10 или 12 цифр.');
+                $memberFields['organization_inn']=$inn;
+            }
+            if(array_key_exists('phone',$person)){
+                $phone=requiredText($person,'phone')?:null;
+                if($phone!==null&&!preg_match('/^\+7\d{10}$/D',$phone))throw new ApiError(422,'VALIDATION','Телефон укажите в формате +7XXXXXXXXXX.');
+                $memberFields['phone']=$phone;
+            }
+            if(array_key_exists('gender',$person)){
+                $gender=requiredText($person,'gender')?:null;
+                if(!in_array($gender,[null,'male','female'],true))throw new ApiError(422,'VALIDATION','Выберите пол из списка.');
+                $memberFields['gender']=$gender===null?null:($gender==='female'?'t':'f');
+            }
+            if(array_key_exists('birthDate',$person)){
+                $birth=requiredText($person,'birthDate')?:null;
+                if($birth!==null&&(!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$birth)||!checkdate((int)substr($birth,5,2),(int)substr($birth,8,2),(int)substr($birth,0,4))))throw new ApiError(422,'VALIDATION','Проверьте дату рождения.');
+                $memberFields['birth_date']=$birth;
+            }
+        }
+        if($memberFields){
+            $member=lockedRecord('sec_member','sm_id',$smId);
+            $changed=array_filter($memberFields,fn($value,$column)=>(string)($value??'')!==(string)($member[$column]??''),ARRAY_FILTER_USE_BOTH);
+            if($changed){
+                requireVersion(['version'=>$body['person']['version']??null],$member);
+                updateRecord('sec_member','sm_id',$smId,$changed);
+            }
+        }
         $programs=$body['programIds']??($reactivated?chairState($old)['programs']:[]);
         if(!is_array($programs)||count($programs)>300||count($programs)!==count(array_unique($programs)))throw new ApiError(422,'VALIDATION','Некорректный список образовательных программ.');
         $directions=[];
@@ -113,10 +165,22 @@ function savePeople(string $category,array $body): array
         }
         foreach(CHAIR_FIELDS as $key=>$column){if(array_key_exists($key,$fields)){
             $value=requiredText($fields,$key);
+            if(in_array($column,['education_diploma_date','diploma_date','at_date'],true)&&$value!==null&&$value!==''&&$value!==($old[$column]??null)
+                &&(!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$value)||!checkdate((int)substr($value,5,2),(int)substr($value,8,2),(int)substr($value,0,4))))
+                throw new ApiError(422,'VALIDATION','Дату укажите в формате ДД.ММ.ГГГГ.');
             if($column==='education_speciality'&&$value!==null&&$value!==($old[$column]??null))$value=preg_replace('/^\s*квалификация\s*[—:-]\s*/iu','',trim($value));
             if($column==='education_specialization'&&$value!==null&&$value!==($old[$column]??null))$value=preg_replace('/^\s*специализация\s*[—:-]\s*/iu','',trim($value));
             $values[$column]=$column==='education_diploma_date'&&$value===''?null:$value;
         }}
+        foreach(['educationDiploma'=>['education_diploma_series','education_diploma_number'],
+            'degreeDiploma'=>['diploma_series','diploma_nu'],
+            'certificate'=>['at_series','at_nu']] as $key=>[$series,$number]){
+            if(!array_key_exists($key,$fields))continue;
+            $combined=requiredText($fields,$key)??'';
+            if($combined===(string)(chairDiplomaValues($old??[])[$key]))continue;
+            $values[$series]='';
+            $values[$number]=$combined;
+        }
         if($old)updateRecord('sec_predsedatel_s','id_predsedatel_sc',$id,$values);else $id=insertRecord('sec_predsedatel_s',$values,'id_predsedatel_sc');
         query('DELETE FROM sec_program WHERE id_predsedatel_sc=$1',[$id]);
         foreach($programCodes as $programCode)query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)',[$id,$programCode]);

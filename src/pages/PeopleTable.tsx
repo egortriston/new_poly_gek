@@ -13,6 +13,7 @@ import type { Person } from "../data/model";
 import { AppSelect } from "../components/AppSelect";
 import { ChairmanCard } from "../components/ChairmanCard";
 import { ChairmanPrint } from "../components/ChairmanPrint";
+import { savePersonDate } from "../data/personDate";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Search, Plus, Pencil, Trash2, RefreshCw, Printer, Archive } from "lucide-react";
@@ -38,6 +39,8 @@ const titles: Record<string, string> = {
 export function PeopleTable() {
   const { category = "external" } = useParams();
   const [params, setParams] = useSearchParams();
+  const cardId = params.get("card");
+  const personId = params.get("person");
   const { notify, year } = useStore();
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
@@ -48,7 +51,6 @@ export function PeopleTable() {
   const [sphere, setSphere] = useState("");
   const [entry, setEntry] = useState<Entry | null>(null);
   const [printing, setPrinting] = useState<Entry | null>(null);
-  const [editingChairPerson, setEditingChairPerson] = useState(false);
 
   const settled = useDebounced(query);
   const listPath =
@@ -101,8 +103,8 @@ export function PeopleTable() {
 
   useEffect(() => {
     setEntry(null);
-    const id = params.get("card"),
-      person = params.get("person");
+    const id = cardId,
+      person = personId;
     if (!id && !person) return;
     const controller = new AbortController();
     api<ListPage<Entry>>(
@@ -123,7 +125,7 @@ export function PeopleTable() {
         if (!controller.signal.aborted) setDeleteError(error.message);
       });
     return () => controller.abort();
-  }, [category, params]);
+  }, [category, cardId, personId]);
   useEffect(() => {
     setQuery("");
     setSphere("");
@@ -159,7 +161,14 @@ export function PeopleTable() {
   };
   const save = async (): Promise<Entry> => {
     if (!entry) throw new Error("Карточка не найдена");
-    await api("/people/" + category + "/save", entry);
+    await api("/people/" + category + "/save", {
+      ...entry,
+      person: entry.person ? { ...entry.person, birthDate: savePersonDate(entry.person.birthDate) } : undefined,
+      values: Object.fromEntries(Object.entries(entry.values).map(([key, value]) => [
+        key,
+        ["educationDiplomaDate", "diplomaDate", "certificateDate"].includes(key) ? savePersonDate(value) : value,
+      ])),
+    });
     // Read the fresh version before allowing the next edit.
     const next = await api<ListPage<Entry>>(
       "/people/" + category + "/list?id=" + encodeURIComponent(entry.id),
@@ -235,10 +244,8 @@ export function PeopleTable() {
         onArchive={() => archiveEntry()}
         onPrint={() => setPrinting(entry)}
         onSave={save}
-        onEditPerson={() => setEditingChairPerson(true)}
         onBack={() => setParams({})}
       />
-      {editingChairPerson && <ExternalPersonEditor person={person} onSave={savePerson} onClose={() => setEditingChairPerson(false)} />}
       {printing && <ChairmanPrint entry={printing} category={category} onClose={() => setPrinting(null)} />}
       </>
     );

@@ -6,6 +6,7 @@ import { RemoteSelect } from "./RemoteSelect";
 import { SchoolMultiSelect } from "./SchoolMultiSelect";
 import { AppSelect } from "./AppSelect";
 import { savePersonDate } from "../data/personDate";
+import { formatDateInput, formatPhoneInput, validDateInput, validPhoneInput } from "../data/inputFormats";
 import type { Entry } from "../pages/PeopleTable";
 export function AddPersonEntry({
   category,
@@ -46,6 +47,8 @@ export function AddPersonEntry({
         setError("Укажите ФИО");
         return;
       }
+      if (!validDateInput(values.birthDate)) { setError("Проверьте дату рождения: ДД.ММ.ГГГГ."); return; }
+      if (!validPhoneInput(values.phone)) { setError("Телефон укажите в формате +7XXXXXXXXXX."); return; }
       person = {
         id: "",
         name: values.name.trim(),
@@ -152,9 +155,6 @@ export function AddPersonEntry({
             email: "Электронная почта",
             phone: "Телефон",
             birthDate: "Дата рождения",
-            academicTitle: "Академическое звание",
-            degree: "Учёная степень",
-            rank: "Учёное звание",
           }).map(([key, label]) => (
             <Field key={key} label={label} required={key === "name"}>
               <input
@@ -167,7 +167,7 @@ export function AddPersonEntry({
                 value={values[key as keyof typeof values]}
               placeholder={key === "birthDate" ? "ДД.ММ.ГГГГ" : key === "phone" ? "+7XXXXXXXXXX" : key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
                 onChange={(e) => {
-                  setValues({ ...values, [key]: e.target.value });
+                  setValues({ ...values, [key]: key === "phone" ? formatPhoneInput(e.target.value) : key === "birthDate" ? formatDateInput(e.target.value) : e.target.value });
                   setError("");
                 }}
               />

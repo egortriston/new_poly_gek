@@ -84,6 +84,19 @@ $new=cardRow('chairmen',$chair);
 check($new['schoolIds']===[$school2],'School association must be replaced');
 check(count(rows('SELECT 1 FROM sec_chair_school WHERE id_predsedatel_sc=$1 AND id_school=$2',[$chair,$school2]))===1,'Unified chairman school link is saved');
 check($new['values']['publications']==='Сохранённые сведения','Omitted sphere fields must survive');
+$memberBefore=rows('SELECT * FROM sec_member WHERE sm_id=$1',[$external])[0];
+savePeople('chairmen',[...$new,'person'=>['version'=>version($memberBefore),'name'=>'Тестовый Председатель','organization'=>'Новая организация','position'=>'Директор','email'=>'chair@example.org','phone'=>'+79991234567','birthDate'=>'1980-04-05','gender'=>'female','inn'=>'1234567890'],'values'=>[
+    ...$new['values'],'qualification'=>'экономист, преподаватель','specialization'=>'Экономика',
+    'academicDegree'=>'кандидат наук','academicRank'=>'доцент','academicTitle'=>'Почётный профессор',
+    'educationDiploma'=>'АБ 12345','educationDiplomaDate'=>'2023-02-17',
+]]);
+$academicSaved=cardRow('chairmen',$chair);
+check($academicSaved['values']['qualification']==='экономист, преподаватель' && $academicSaved['values']['specialization']==='Экономика','Qualification and specialization must persist after reopening');
+check($academicSaved['values']['academicDegree']==='кандидат наук' && $academicSaved['values']['academicRank']==='доцент' && $academicSaved['values']['academicTitle']==='Почётный профессор','Chairman academic fields must persist in member record');
+check($academicSaved['values']['educationDiploma']==='АБ 12345' && $academicSaved['values']['educationDiplomaDate']==='2023-02-17','Combined diploma and date must persist');
+$memberSaved=rows('SELECT * FROM sec_member WHERE sm_id=$1',[$external])[0];
+check($memberSaved['sm_name']==='Тестовый Внешний' && $memberSaved['organization']==='Новая организация','Chairman saves linked participant fields but cannot change name');
+$new=$academicSaved;
 expectError('STALE_RECORD',fn()=>savePeople('chairmen',$old));
 expectError('INVALID_REFERENCE',fn()=>savePeople('chairmen',[...$new,'schoolIds'=>['99999']]));
 check(cardRow('chairmen',$chair)['schoolIds']===[$school2],'Failed save must not partially change card');
