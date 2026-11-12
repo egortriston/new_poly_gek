@@ -11,7 +11,7 @@ function chairmanExportDate(?string $value): string
 function chairmanExport(): never
 {
     if (!class_exists(ZipArchive::class)) throw new ApiError(503,'EXPORT_UNAVAILABLE','Для выгрузки требуется расширение PHP zip.');
-    $headers=['Фамилия','Имя','Отчество','ПОЛ (М/Ж)','Дата рождения','ИНН организации','Название организации','Должность','Почта','Номер телефона','Название вуза','Серия и Номер диплома об образовании','Направление подготовки','Дата диплома об образовании','Специализация','Квалификация','Ученая степень','Серия и номер диплома об ученой степени','Дата диплома об ученой степени','Ученая степень (вторая, если есть)','Серия и номер диплома об ученой степени','Дата диплома об ученой степени','Ученое звание','Серия и номер диплома об ученом звании','Дата диплома об ученом звании','Академическое звание','Почетное звание','Образовательные программы'];
+    $headers=['Фамилия','Имя','Отчество','ПОЛ (М/Ж)','Дата рождения','ИНН организации','Название организации','Должность','Почта','Номер телефона','Название вуза','Серия и Номер диплома об образовании','Направление подготовки','Дата диплома об образовании','Специализация','Квалификация','Ученая степень','Серия и номер диплома об ученой степени','Дата диплома об ученой степени','Ученое звание','Серия и номер диплома об ученом звании','Дата диплома об ученом звании','Академическое звание','Почетное звание','Образовательные программы'];
     $sheetRows=[$headers];
     foreach (rows("SELECT c.*,m.* FROM sec_predsedatel_s c JOIN sec_member m ON m.sm_id=c.sm_id WHERE c.area IS NOT NULL AND btrim(c.area)<>'' ORDER BY m.sm_name,c.id_predsedatel_sc") as $row) {
         [$surname,$first,$patronymic]=chairmanPrintNameParts((string)$row['sm_name']);
@@ -23,7 +23,7 @@ function chairmanExport(): never
             $row['education_name']??'',chairmanExportDate($row['education_diploma_date']??null),$row['education_specialization']??'',
             preg_replace('/^\s*квалификация\s*[—:-]\s*/iu','',trim((string)($row['education_speciality']??''))),$row['academic_degree']??'',
             trim(implode(' ',array_filter([$row['diploma_series']??'',$row['diploma_nu']??'']))),chairmanExportDate($row['diploma_date']??null),
-            '','','',$row['academic_rank']??'',trim(implode(' ',array_filter([$row['at_series']??'',$row['at_nu']??'']))),
+            $row['academic_rank']??'',trim(implode(' ',array_filter([$row['at_series']??'',$row['at_nu']??'']))),
             chairmanExportDate($row['at_date']??null),$row['academic_title']??'',$row['honorary_title']??'',
             implode('; ',array_map(fn($p)=>trim($p['id_program'].' '.$p['name_program']),$programs)),
         ];
