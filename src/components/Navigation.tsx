@@ -1,16 +1,18 @@
 import { useStore } from '../store';
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown, House, Layers3, GraduationCap, Database, Server, Archive, BookOpen } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { ChevronDown, Layers3, GraduationCap, Database, Server, Archive, BookOpen } from 'lucide-react';
+const NAV_STORAGE_KEY = 'polytech-navigation-open-v1';
+function savedNavigation(): Record<string, boolean> {
+ try { const value=JSON.parse(localStorage.getItem(NAV_STORAGE_KEY) || '{}'); return value && typeof value==='object' && !Array.isArray(value) ? value : {}; }
+ catch { return {}; }
+}
 export function Navigation({ onNavigate }: { onNavigate: () => void }) {
  const { user } = useStore();
- const { pathname } = useLocation(); const isGek = pathname.startsWith('/gek') || pathname.startsWith('/commissions'); const isData = pathname === '/data' || pathname.startsWith('/data/');
- const [open, setOpen] = useState({ oop: pathname.startsWith('/oop'), attestation: pathname.startsWith('/attestation'), gek: isGek, data: isData, people: pathname.includes('/people'), structure:pathname.includes('/structure')||pathname.endsWith('/schools')||pathname.endsWith('/teachers'), education:pathname.includes('/education')||['/directions','/programs','/disciplines'].some(x=>pathname.endsWith(x)) });
- useEffect(() => { setOpen(o => ({ ...o, ...(pathname.startsWith('/oop') ? {oop:true} : {}), ...(pathname.startsWith('/attestation') ? { attestation: true } : {}), ...(isGek ? { gek: true } : {}), ...(isData ? { data: true } : {}), ...(pathname.includes('/people') ? { people: true } : {}), ...(pathname.includes('/structure')||pathname.endsWith('/schools')||pathname.endsWith('/teachers')?{structure:true}:{}), ...(pathname.includes('/education')||['/directions','/programs','/disciplines'].some(x=>pathname.endsWith(x))?{education:true}:{}) })); }, [pathname, isGek, isData]);
- const [oopDataOpen,setOopDataOpen]=useState(pathname.startsWith('/oop/data'));
- useEffect(()=>{if(pathname.startsWith('/oop/data'))setOopDataOpen(true);},[pathname]);
- const [attOpen, setAttOpen] = useState<Record<string, boolean>>({spo: pathname.startsWith('/attestation/spo'), ac: pathname.startsWith('/attestation/ac'), ppa: pathname.startsWith('/attestation/ppa')});
- useEffect(() => { const kind = pathname.split('/')[2]; if (pathname.startsWith('/attestation/') && ['spo','ac','ppa'].includes(kind)) setAttOpen(o => ({...o,[kind]:true})); }, [pathname]);
+ const [open, setOpen] = useState(() => { const saved=savedNavigation(); return { oop:saved.oop??true, attestation:saved.attestation??true, gek:saved.gek??true, data:saved.data??true, people:saved.people??true, structure:saved.structure??true, education:saved.education??true }; });
+ const [oopDataOpen,setOopDataOpen]=useState(() => savedNavigation().oopData??true);
+ const [attOpen, setAttOpen] = useState<Record<string, boolean>>(() => { const saved=savedNavigation(); return {spo:saved.spo??true, ac:saved.ac??true, ppa:saved.ppa??true}; });
+ useEffect(() => { try { localStorage.setItem(NAV_STORAGE_KEY,JSON.stringify({...open,oopData:oopDataOpen,...attOpen})); } catch { /* Storage may be disabled; navigation still works. */ } }, [open,oopDataOpen,attOpen]);
  const link = (to: string, text: string, end = true) => <NavLink to={to} end={end} onClick={onNavigate} className={({ isActive }) => `tree-link ${isActive ? 'active' : ''}`}>{text}</NavLink>;
  return <nav className="navigation-tree" aria-label="Основная навигация">
  
