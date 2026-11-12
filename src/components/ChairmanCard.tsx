@@ -28,6 +28,7 @@ export function ChairmanCard({
   onArchive,
   onPrint,
   onSave,
+  onEditPerson,
   onBack,
 }: {
   entry: Entry;
@@ -40,6 +41,7 @@ export function ChairmanCard({
   onArchive: () => Promise<void>;
   onPrint: () => void;
   onSave: () => Promise<Entry>;
+  onEditPerson: () => void;
   onBack: () => void;
 }) {
   const [baseline, setBaseline] = useState(() => JSON.stringify(entry));
@@ -213,6 +215,7 @@ export function ChairmanCard({
               </p>
             </div>
             <span className="subtle-pill">{entry.sphere}</span>
+            {!person.missing && <button type="button" className="button secondary" onClick={onEditPerson}>Редактировать сведения участника</button>}
           </div>
           <div className="profile-form">
             {person.missing && (
@@ -364,14 +367,16 @@ export function ChairmanCard({
                 {input(
                   "university",
                   "Учебное заведение",
-                  "Название ВУЗа, номер и дата выдачи диплома об образовании",
+                  "Название учебного заведения",
                 )}
+                <div className="form-grid three">{input("educationDiplomaSeries", "Серия диплома об образовании")}{input("educationDiplomaNumber", "Номер диплома об образовании")}{input("educationDiplomaDate", "Дата диплома об образовании", "ГГГГ-ММ-ДД")}</div>
                 {input("education", "Наименование специальности или направления подготовки", "Наименование специальности или направления подготовки по диплому")}
                 {input(
                   "qualification",
-                  "Специальность и квалификация",
-                  "Специальность — …, квалификация — … (в соответствии с дипломом)",
+                  "Квалификация",
+                  "Только значение по диплому",
                 )}
+                {input("specialization", "Специализация", "Только значение по диплому")}
               </>,
             )}
             {section(

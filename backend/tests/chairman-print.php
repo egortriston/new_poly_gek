@@ -8,10 +8,15 @@ require dirname(__DIR__) . '/src/chairman-print.php';
 foreach (['Бизнес'=>'chairmen', 'Образование'=>'complex'] as $sphere=>$category) {
     $person = savePeople('external', ['person'=>['name'=>'Сафаров Гасан Гусейн оглы', 'organization'=>'Организация <тест> & партнёры']])['id'];
     $id = savePeople($category, ['personId'=>'member:'.$person, 'sphere'=>$sphere, 'schoolIds'=>[$school],
-        'values'=>['publications'=>'Публикации тест', 'career_activity'=>'Практика тест']])['id'];
+        'values'=>['publications'=>'Публикации тест', 'career_activity'=>'Практика тест',
+            'university'=>'Тестовый вуз', 'educationDiplomaNumber'=>'12345', 'educationDiplomaDate'=>'2020-05-06',
+            'qualification'=>'Экономист']])['id'];
     query('INSERT INTO sec_program(id_predsedatel_sc,id_program) VALUES($1,$2)', [$id, '01.03.05_02']);
     $input = ['id'=>$id, 'school'=>$school, 'academicYear'=>'2027/2028'];
     $document = chairmanPrint($category, $input);
+    check(str_contains($document['html'],'Тестовый вуз, 12345, 06.05.2020'),'Education line joins filled fields only');
+    check(str_contains($document['html'],'Квалификация — Экономист'),'Qualification label is added only in PDF');
+    check(!str_contains($document['html'],', Квалификация — Экономист'),'Missing specialization does not add a comma');
     check(str_contains($document['html'], 'Гусейн оглы'), 'Compound patronymic is printed in full');
     check(str_contains($document['html'], '2028 год'), 'Academic period controls printed year');
     $changedYears = chairmanPrint($category, [...$input, 'titleYear'=>'2027', 'signatureYear'=>'2029']);

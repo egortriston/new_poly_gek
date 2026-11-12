@@ -6,6 +6,7 @@ require dirname(__DIR__) . '/src/people.php';
 require dirname(__DIR__) . '/src/lists.php';
 require dirname(__DIR__) . '/src/archive.php';
 require dirname(__DIR__) . '/src/chairman-print.php';
+require dirname(__DIR__) . '/src/chairman-export.php';
 require dirname(__DIR__) . '/src/gek.php';
 require dirname(__DIR__) . '/src/gek-print.php';
 require dirname(__DIR__) . '/src/spo.php';
@@ -24,7 +25,7 @@ header('X-Request-ID: ' . $requestId);
 try {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $method = $_SERVER['REQUEST_METHOD'];
-    if ($path === '/api/v1/health' && $method === 'GET') respond(['data' => ['status' => 'ok', 'version' => '2.0.2']]);
+    if ($path === '/api/v1/health' && $method === 'GET') respond(['data' => ['status' => 'ok', 'version' => '2.0.3']]);
     startSession();
     if ($path === '/api/v1/auth/session' && $method === 'GET') respond(['data' => ['user' => currentUser(), 'csrfToken' => $_SESSION['csrf'], 'databases'=>databaseSession()]]);
     if ($path === '/api/v1/auth/login' && $method === 'POST') {
@@ -52,6 +53,7 @@ try {
         respond(['data' => ['loggedOut' => true]]);
     }
     $user = requireUser();
+    if($path==='/api/v1/people/chairmen/export'&&$method==='GET'){requireAdmin($user);chairmanExport();}
     if (preg_match('#^/api/v1/catalog/(directions|programs)(/|$)#', $path)) requireAdmin($user);
     databaseSession();
     if($method!=='GET'||isset($_SERVER['HTTP_X_DATABASE_CONTEXT']))requireDatabaseContext();

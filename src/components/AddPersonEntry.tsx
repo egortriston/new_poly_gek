@@ -5,6 +5,7 @@ import { Field, Modal } from "./ui";
 import { RemoteSelect } from "./RemoteSelect";
 import { SchoolMultiSelect } from "./SchoolMultiSelect";
 import { AppSelect } from "./AppSelect";
+import { savePersonDate } from "../data/personDate";
 import type { Entry } from "../pages/PeopleTable";
 export function AddPersonEntry({
   category,
@@ -25,6 +26,12 @@ export function AddPersonEntry({
   const [values, setValues] = useState({
     name: "",
     organization: "",
+    inn: "",
+    gender: "",
+    birthDate: "",
+    email: "",
+    phone: "",
+    academicTitle: "",
     position: "",
     degree: "",
     rank: "",
@@ -43,6 +50,12 @@ export function AddPersonEntry({
         id: "",
         name: values.name.trim(),
         organization: values.organization.trim(),
+        inn: values.inn.trim(),
+        gender: values.gender,
+        birthDate: savePersonDate(values.birthDate),
+        email: values.email.trim(),
+        phone: values.phone.trim(),
+        academicTitle: values.academicTitle.trim(),
         position: values.position.trim(),
         degree: values.degree.trim(),
         rank: values.rank.trim(),
@@ -130,10 +143,16 @@ export function AddPersonEntry({
         }}
       >
         {external ? (
-          Object.entries({
+          <>
+          {Object.entries({
             name: "ФИО",
             organization: "Организация",
+            inn: "ИНН организации",
             position: "Должность",
+            email: "Электронная почта",
+            phone: "Телефон",
+            birthDate: "Дата рождения",
+            academicTitle: "Академическое звание",
             degree: "Учёная степень",
             rank: "Учёное звание",
           }).map(([key, label]) => (
@@ -142,15 +161,20 @@ export function AddPersonEntry({
                 disabled={busy}
                 aria-label={label}
                 required={key === "name"}
+                type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
+                inputMode={key === "inn" || key === "phone" ? "numeric" : undefined}
+                pattern={key === "inn" ? "[0-9]{10}([0-9]{2})?" : key === "phone" ? "\\+7[0-9]{10}" : key === "birthDate" ? "[0-9]{2}\\.[0-9]{2}\\.[0-9]{4}" : undefined}
                 value={values[key as keyof typeof values]}
-              placeholder={key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
+              placeholder={key === "birthDate" ? "ДД.ММ.ГГГГ" : key === "phone" ? "+7XXXXXXXXXX" : key === "organization" ? "Полное наименование организации по лицензии; допускается сокращение правовой формы" : key === "position" ? "Одна основная должность — точно по записи в трудовой книжке" : undefined}
                 onChange={(e) => {
                   setValues({ ...values, [key]: e.target.value });
                   setError("");
                 }}
               />
             </Field>
-          ))
+          ))}
+          <Field label="Пол"><AppSelect aria-label="Пол" value={values.gender} onChange={(e) => setValues({ ...values, gender: e.target.value })}><option value="">Не указан</option><option value="male">Мужской</option><option value="female">Женский</option></AppSelect></Field>
+          </>
         ) : (
           <>
             <Field label="Председатель" required>

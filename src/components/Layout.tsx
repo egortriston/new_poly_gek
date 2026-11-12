@@ -15,7 +15,7 @@ import { LogOut, PanelLeftClose, Menu, CheckCircle2 } from "lucide-react";
 import { Brand } from "./ui";
 import { useStore } from "../store";
 
-const APP_VERSION = "2.0.2";
+const APP_VERSION = "2.0.3";
 
 export function Layout() {
   const {

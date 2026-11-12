@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Printer } from 'lucide-react';
+import { Printer, FileSpreadsheet } from 'lucide-react';
+import { useStore } from '../store';
 import { useGek } from '../data/gek';
 import { AppSelect } from '../components/AppSelect';
 import { PageTitle } from '../components/PageTitle';
@@ -8,6 +9,7 @@ import { GekPdfPreview, type GekDocumentKind } from '../components/GekPdfPreview
 import { PrintYears } from '../components/PrintYears';
 
 export function GekDocuments() {
+  const {user}=useStore();
   const {commissions,schools,numberingStart,updateNumbering,year}=useGek();
  const defaultYear=Number(year)+1;
  const [titleYear,setTitleYear]=useState(String(defaultYear));
@@ -42,7 +44,7 @@ export function GekDocuments() {
   ];
   return <div className="page-enter hub-page">
     <Link className="text-button" to="/gek">Комиссии ГЭК /</Link>
-    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p></div>
+    <div className="hub-welcome"><span className="eyebrow">ДОКУМЕНТЫ</span><PageTitle>Печать документов ГЭК</PageTitle><p>Выберите документ и состав высших школ для печати.</p>{user?.role==='admin'&&<a className="button secondary" href="/api/v1/people/chairmen/export" download><FileSpreadsheet size={16}/> Выгрузить председателей в Excel</a>}</div>
     <div className="gek-print-settings">
       <PrintYears defaultYear={defaultYear} titleYear={titleYear} signatureYear={signatureYear} onTitleYear={setTitleYear} onSignatureYear={setSignatureYear}/>
       <label className="gek-numbering">Начать нумерацию ГЭК с<input aria-label="Начать нумерацию ГЭК с" aria-invalid={!!numberError} aria-describedby={numberError?'gek-numbering-error':undefined} disabled={saving} type="number" min="1" max="9999" value={start} onChange={e=>{setStart(e.target.value);setNumberError('');}}/></label>

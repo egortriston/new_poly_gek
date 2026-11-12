@@ -69,6 +69,13 @@ expectError('IN_USE',fn()=>deleteCatalog('schools',['id'=>$school,'version'=>cat
 expectError('IN_USE',fn()=>deleteCatalog('directions',['id'=>$direction,'version'=>catalogRow('directions',$direction)['version']]));
 
 $external=savePeople('external',['person'=>['name'=>'Тестовый Внешний','organization'=>'Организация']])['id'];
+$externalRow=rows('SELECT * FROM sec_member WHERE sm_id=$1',[$external])[0];
+savePeople('external',['id'=>$external,'version'=>version($externalRow),'person'=>[
+    'name'=>'Тестовый Внешний','organization'=>'Организация','inn'=>'1234567890','gender'=>'female',
+    'birthDate'=>'1980-04-05','phone'=>'+79991234567','email'=>'test@example.org','academicTitle'=>'Почётный профессор']]);
+$externalRow=rows('SELECT * FROM sec_member WHERE sm_id=$1',[$external])[0];
+check($externalRow['organization_inn']==='1234567890'&&$externalRow['gender']==='t'&&$externalRow['birth_date']==='1980-04-05','New member fields saved');
+expectError('VALIDATION',fn()=>savePeople('external',['id'=>$external,'version'=>version($externalRow),'person'=>['name'=>'Тестовый Внешний','phone'=>'89991234567']]));
 $chair=savePeople('chairmen',['personId'=>'member:'.$external,'sphere'=>'Бизнес','schoolIds'=>[$school],'values'=>['career_activity'=>'Практика','publications'=>'Сохранённые сведения']])['id'];
 expectError('DUPLICATE',fn()=>savePeople('complex',['personId'=>'member:'.$external,'sphere'=>'Образование','schoolIds'=>[$school]]));
 $old=cardRow('chairmen',$chair);

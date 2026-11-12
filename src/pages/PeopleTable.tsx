@@ -48,6 +48,7 @@ export function PeopleTable() {
   const [sphere, setSphere] = useState("");
   const [entry, setEntry] = useState<Entry | null>(null);
   const [printing, setPrinting] = useState<Entry | null>(null);
+  const [editingChairPerson, setEditingChairPerson] = useState(false);
 
   const settled = useDebounced(query);
   const listPath =
@@ -142,14 +143,16 @@ export function PeopleTable() {
   const person = entry?.person;
   const savePerson = async (updated: Person) => {
     if (!entry) return;
-    await api("/people/external/save", {
-      id: entry.id,
-      version: entry.version,
+    await api("/people/" + (updated.kind === 'external' ? 'external' : 'member') + "/save", {
+      id: updated.id.replace(/^member:/, ""),
+      version: person?.version ?? entry.version,
       person: updated,
     });
     notify("Изменения сохранены");
     try {
       await source.reload();
+      const fresh = await api<ListPage<Entry>>('/people/' + category + '/list?id=' + encodeURIComponent(entry.id));
+      setEntry(fresh.items[0] ?? null);
     } catch (error) {
       setDeleteError("Изменения сохранены. " + (error as Error).message);
     }
@@ -232,8 +235,10 @@ export function PeopleTable() {
         onArchive={() => archiveEntry()}
         onPrint={() => setPrinting(entry)}
         onSave={save}
+        onEditPerson={() => setEditingChairPerson(true)}
         onBack={() => setParams({})}
       />
+      {editingChairPerson && <ExternalPersonEditor person={person} onSave={savePerson} onClose={() => setEditingChairPerson(false)} />}
       {printing && <ChairmanPrint entry={printing} category={category} onClose={() => setPrinting(null)} />}
       </>
     );

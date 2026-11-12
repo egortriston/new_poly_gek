@@ -154,6 +154,20 @@ function chairmanPrint(string $category, array $input): array
         $name_school = implode(', ', array_column($printSchools, 'name_school'));
         [$surname, $first_name, $otchestvo] = chairmanPrintNameParts($member['sm_name']);
         $memberValue = static function (string $field, string $table) use ($member, $chair): string {
+            if ($table === 'sec_predsedatel_s' && $field === 'education_university') {
+                $diplomaNumber = trim(implode(' ', array_filter([$chair['education_diploma_series']??'', $chair['education_diploma_number']??''], fn($v)=>trim((string)$v)!=='')));
+                $date=$chair['education_diploma_date']??'';
+                if(preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date))$date=substr($date,8,2).'.'.substr($date,5,2).'.'.substr($date,0,4);
+                return printEscape(implode(', ', array_filter([$chair['education_university']??'', $diplomaNumber, $date], fn($v)=>trim((string)$v)!=='')));
+            }
+            if ($table === 'sec_predsedatel_s' && $field === 'education_speciality') {
+                $parts = [];
+                foreach (['education_specialization'=>'Специализация', 'education_speciality'=>'Квалификация'] as $column=>$label) {
+                    $value=trim((string)($chair[$column]??''));
+                    if($value!=='')$parts[]=preg_match('/^(?:специальность|специализация|квалификация)\s*[—:-]/iu',$value)?$value:$label.' — '.$value;
+                }
+                return printEscape(implode(', ', array_filter($parts, fn($v)=>trim((string)$v)!=='')));
+            }
             $primary = $table === 'sec_member' ? $member : $chair;
             $fallback = $table === 'sec_member' ? $chair : $member;
             return printEscape($primary[$field] ?? $fallback[$field] ?? '');
