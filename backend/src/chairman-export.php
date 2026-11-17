@@ -25,7 +25,7 @@ function chairmanExport(): never
             trim(implode(' ',array_filter([$row['diploma_series']??'',$row['diploma_nu']??'']))),chairmanExportDate($row['diploma_date']??null),
             $row['academic_rank']??'',trim(implode(' ',array_filter([$row['at_series']??'',$row['at_nu']??'']))),
             chairmanExportDate($row['at_date']??null),$row['academic_title']??'',$row['honorary_title']??'',
-            implode('; ',array_map(fn($p)=>trim($p['id_program'].' '.$p['name_program']),$programs)),
+            implode(', ',array_column($programs,'id_program')),
         ];
     }
     $xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
